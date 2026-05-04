@@ -336,7 +336,17 @@ function simpleScore(picks, results) {
     <div class="error-msg" id="admin-error">❌ Error al guardar. Comprueba la conexión de Google Sheets.</div>
   </div>
   <div class="card">
-    <h2>👑 Establecer Campeón del Torneo</h2>
+    <h2>📱 Resumen para WhatsApp</h2>
+    <p style="color:var(--muted);font-size:0.9rem;margin-bottom:12px;">Genera un texto listo para copiar y pegar en el grupo de WhatsApp con los resultados del día y la clasificación actualizada.</p>
+    <div class="form-group">
+      <label>Día del torneo</label>
+      <input type="number" id="wa-day" min="1" max="30" placeholder="ej. 3" style="font-family:'Barlow',sans-serif;font-size:1rem;padding:11px 14px;border-radius:8px;max-width:120px;">
+    </div>
+    <button class="btn btn-green" id="wa-btn" style="width:100%;">📋 Generar y Copiar Resumen</button>
+    <div id="wa-preview" style="display:none;margin-top:14px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:16px;font-size:0.88rem;white-space:pre-wrap;line-height:1.7;color:var(--text);font-family:monospace;"></div>
+    <div class="success-msg" id="wa-success">✅ ¡Copiado al portapapeles! Pégalo en WhatsApp.</div>
+    <div class="error-msg" id="wa-error">❌ Error al copiar. Selecciona el texto manualmente.</div>
+  </div>
     <p style="color:var(--muted);font-size:0.9rem;margin-bottom:12px;">Configura esto tras la final para otorgar los 30 pts del bono de campeón.</p>
     <div class="form-group">
       <label>Campeón Real del Torneo</label>
@@ -627,7 +637,7 @@ function init() {
   document.getElementById('submit-btn').addEventListener('click', submitPicks);
   document.getElementById('refresh-lb-btn').addEventListener('click', loadAndRenderLeaderboard);
   document.getElementById('results-btn').addEventListener('click', saveResults);
-  document.getElementById('champ-btn').addEventListener('click', saveChampion);
+  document.getElementById('wa-btn').addEventListener('click', generateWhatsapp);
   document.getElementById('sheet-url').addEventListener('input', clearUrlStatus);
 
   // Populate team dropdowns sorted by rank
@@ -986,6 +996,85 @@ function saveChampion() {
   localStorage.setItem('wc_champion',c);
   document.getElementById('champ-success').style.display='block';
   setTimeout(function(){document.getElementById('champ-success').style.display='none';},3000);
+}
+
+// ════════ WHATSAPP SUMMARY ════════
+function generateWhatsapp() {
+  var day = document.getElementById('wa-day').value || '?';
+  var results = getLocal('wc_results_local');
+  var allPicks = getLocal('wc_picks_local');
+
+  // Build today's results lines
+  var resultLines = '';
+  var matchCount = 0;
+  MATCHES.forEach(function(m) {
+    var r = results[m.id];
+    if(!r || !r.winner) return;
+    var ht = td(m.home), at = td(m.away);
+    var score = (r.home!==''&&r.away!=='') ? r.home+' – '+r.away : '– –';
+    var winnerFlag = r.winner==='Draw' ? '🤝 Empate' : (r.winner===m.home ? ht.flag+' '+ht.name : at.flag+' '+at.name);
+    resultLines += ht.flag+' '+ht.name+' '+score+' '+at.name+' '+at.flag+'\n';
+    matchCount++;
+  });
+
+  if(matchCount === 0) {
+    document.getElementById('wa-error').style.display='block';
+    document.getElementById('wa-error').textContent='❌ No hay resultados guardados todavía. Introduce los resultados primero.';
+    setTimeout(function(){document.getElementById('wa-error').style.display='none';},4000);
+    return;
+  }
+
+  // Build leaderboard lines
+  var scored = Object.values(allPicks).map(function(p){
+    return Object.assign({name:p.name||'?'}, calcScore(p, results));
+  }).sort(function(a,b){return b.total-a.total;});
+
+  var medals = ['🥇','🥈','🥉'];
+  var lbLines = '';
+  scored.forEach(function(p,i){
+    lbLines += (medals[i]||((i+1)+'.')) + ' ' + p.name + ' — ' + p.total + ' pts\n';
+  });
+
+  // Leader gap
+  var gapLine = '';
+  if(scored.length > 1) {
+    var gap = scored[0].total - scored[1].total;
+    gapLine = gap > 0
+      ? scored[0].name+' lidera por '+gap+' pts'
+      : '¡Empate en la cima!';
+  }
+
+  // Build full message
+  var today = new Date();
+  var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var dateStr = today.getDate()+' '+months[today.getMonth()]+' '+today.getFullYear();
+
+  var msg =
+    '🏆 Quiniela Mundial 2026 — Día '+day+'\n'+
+    '📅 '+dateStr+'\n'+
+    '\n⚽ Resultados\n'+
+    resultLines+
+    '\n🏅 Clasificación\n'+
+    lbLines+
+    (gapLine ? '\n📊 '+gapLine+'\n' : '')+
+    '\nTu instinto natural · Vencer a tu rival\n'+
+    'Tienes que pelear por una estrella 🏆';
+
+  // Show preview
+  var preview = document.getElementById('wa-preview');
+  preview.style.display='block';
+  preview.textContent = msg;
+
+  // Copy to clipboard
+  navigator.clipboard.writeText(msg).then(function(){
+    document.getElementById('wa-success').style.display='block';
+    document.getElementById('wa-error').style.display='none';
+    setTimeout(function(){document.getElementById('wa-success').style.display='none';},4000);
+  }).catch(function(){
+    document.getElementById('wa-error').style.display='block';
+    document.getElementById('wa-error').textContent='❌ No se pudo copiar automáticamente. Selecciona el texto de arriba manualmente.';
+    document.getElementById('wa-success').style.display='none';
+  });
 }
 
 // ════════ SCORING ════════
