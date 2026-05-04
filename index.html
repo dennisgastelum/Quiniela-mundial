@@ -127,16 +127,16 @@
 <!-- ══ REGLAS ══ -->
 <div id="tab-scoring" class="section active">
   <div class="card" style="border-color:rgba(255,214,0,0.3);background:linear-gradient(135deg,rgba(255,214,0,0.05),rgba(0,200,83,0.05));">
-  <p style="font-size:1.05rem;line-height:1.8;text-align:center;">
-    👋 ¡Bienvenidos a la quiniela mundialista de <strong style="color:var(--gold)">Dennis</strong>!<br>
-    En <strong style="color:var(--green)">Mis Pronósticos</strong> puedes actualizar tus resultados.<br>
-    <span style="font-size:1.2rem;">🏆 La Copa de la Vida está aquí 🏆</span>
-  </p>
-</div>
+    <p style="font-size:1.05rem;line-height:1.9;text-align:center;">
+      👋 ¡Bienvenidos a la quiniela mundialista de <strong style="color:var(--gold)">Dennis</strong>!<br>
+      En <strong style="color:var(--green)">Mis Pronósticos</strong> puedes actualizar tus resultados.<br>
+      <span style="font-size:1.2rem;">🏆 La Copa de la Vida está aquí 🏆</span>
+    </p>
+  </div>
   <div class="card">
     <h2>🎯 Sistema de Puntuación</h2>
     <div class="score-grid">
-      <div class="score-row header"><div>Lo que predices correctamente:</div><div>Pts</div><div style="min-width:80px;text-align:center;font-size:0.7rem;color:var(--muted);">MÁX TOTAL</div></div>
+      <div class="score-row header"><div>Qué predices correctamente</div><div>Pts</div><div style="min-width:80px;text-align:center;font-size:0.7rem;color:var(--muted);">MÁX TOTAL</div></div>
       <div class="score-row"><div>✅ Resultado correcto en fase de grupos (G/E/P) <em style="color:var(--muted);font-weight:400">— 72 partidos</em></div><div>2</div><div style="text-align:center;font-weight:700;color:var(--muted);">144</div></div>
       <div class="score-row"><div>🎯 Marcador exacto en fase de grupos <em style="color:var(--muted);font-weight:400">— 72 partidos</em></div><div>+3</div><div style="text-align:center;font-weight:700;color:var(--muted);">216</div></div>
       <div class="score-row"><div>🔵 Equipo clasifica top-2 del grupo <em style="color:var(--muted);font-weight:400">(automático · 24 equipos)</em></div><div>4</div><div style="text-align:center;font-weight:700;color:var(--muted);">96</div></div>
@@ -579,7 +579,19 @@ function sheetPost(payload) {
 }
 
 // ════════ TAB SWITCHING ════════
+var PROTECTED_TABS = ['setup','admin','howto'];
+var ADMIN_PASSWORD = 'QuinielaMundialista';
+var unlockedAdmin = false;
+
 function showTab(id) {
+  if(PROTECTED_TABS.indexOf(id) > -1 && !unlockedAdmin) {
+    var pw = prompt('🔒 Acceso restringido. Introduce la contraseña:');
+    if(pw !== ADMIN_PASSWORD) {
+      alert('❌ Contraseña incorrecta.');
+      return;
+    }
+    unlockedAdmin = true;
+  }
   document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   var sec = document.getElementById('tab-'+id);
