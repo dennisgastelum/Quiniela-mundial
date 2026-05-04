@@ -117,9 +117,9 @@
   <div class="tab active" data-tab="scoring">📋 Reglas</div>
   <div class="tab" data-tab="enter">✏️ Mis Pronósticos</div>
   <div class="tab" data-tab="leaderboard">🏆 Clasificación</div>
-  <div class="tab" data-tab="setup">⚙️ Configuración</div>
-  <div class="tab" data-tab="admin">🔧 Admin</div>
-  <div class="tab" data-tab="howto">📖 GitHub</div>
+  <div class="tab" data-tab="setup">🔒 Configuración</div>
+  <div class="tab" data-tab="admin">🔒 Admin</div>
+  <div class="tab" data-tab="howto">🔒 GitHub</div>
 </div>
 
 <main>
@@ -585,9 +585,10 @@ var unlockedAdmin = false;
 
 function showTab(id) {
   if(PROTECTED_TABS.indexOf(id) > -1 && !unlockedAdmin) {
-    var pw = prompt('🔒 Acceso restringido. Introduce la contraseña:');
+    var pw = prompt('🔒 Sección de administrador.\n\nIntroduce la contraseña para continuar:');
+    if(pw === null) return; // user cancelled
     if(pw !== ADMIN_PASSWORD) {
-      alert('❌ Contraseña incorrecta.');
+      alert('❌ Contraseña incorrecta. Acceso denegado.');
       return;
     }
     unlockedAdmin = true;
