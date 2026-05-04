@@ -109,7 +109,7 @@
 
 <header>
   <h1>🏆 Quiniela Mundial 2026</h1>
-  <p>La Copa de la Vida &bull; La gloria te espera</p>
+  <p>Tu instinto natural &bull; Vencer a tu rival &bull; Tienes que pelear por una estrella</p>
 </header>
 <div id="conn-banner"></div>
 
@@ -129,7 +129,7 @@
   <div class="card">
     <h2>🎯 Sistema de Puntuación</h2>
     <div class="score-grid">
-      <div class="score-row header"><div>¿Qué se predice correctamente?</div><div>Pts</div><div style="min-width:80px;text-align:center;font-size:0.7rem;color:var(--muted);">MÁX TOTAL</div></div>
+      <div class="score-row header"><div>Lo que predices correctamente:</div><div>Pts</div><div style="min-width:80px;text-align:center;font-size:0.7rem;color:var(--muted);">MÁX TOTAL</div></div>
       <div class="score-row"><div>✅ Resultado correcto en fase de grupos (G/E/P) <em style="color:var(--muted);font-weight:400">— 72 partidos</em></div><div>2</div><div style="text-align:center;font-weight:700;color:var(--muted);">144</div></div>
       <div class="score-row"><div>🎯 Marcador exacto en fase de grupos <em style="color:var(--muted);font-weight:400">— 72 partidos</em></div><div>+3</div><div style="text-align:center;font-weight:700;color:var(--muted);">216</div></div>
       <div class="score-row"><div>🔵 Equipo clasifica top-2 del grupo <em style="color:var(--muted);font-weight:400">(automático · 24 equipos)</em></div><div>4</div><div style="text-align:center;font-weight:700;color:var(--muted);">96</div></div>
@@ -552,7 +552,8 @@ function td(key) { return TEAM_DATA[key] || {flag:"🏳️",rank:null,name:key};
 function slug(s) { return s.toLowerCase().replace(/[^a-z0-9]/g,''); }
 function getLocal(k) { try { return JSON.parse(localStorage.getItem(k)||'{}'); } catch(e) { return {}; } }
 function setLocal(k,v) { localStorage.setItem(k,JSON.stringify(v)); }
-function getSheetUrl() { return localStorage.getItem('wc_sheet_url')||''; }
+var HARDCODED_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz0YPpEQmEIIawX-sQky-JrLb-jNksSSZ0AbvWq7dkiPMSxzj-VWAocIwUKNXt2QcdF/exec';
+function getSheetUrl() { return localStorage.getItem('wc_sheet_url') || HARDCODED_SHEET_URL; }
 
 // ════════ SHEET API ════════
 function sheetGet(action) {
@@ -582,7 +583,7 @@ function showTab(id) {
   if(id==='admin') renderAdminMatches();
   if(id==='enter') {
     var w = document.getElementById('no-url-warn');
-    if(w) w.style.display = getSheetUrl()?'none':'block';
+    if(w) w.style.display = 'none';
     var name = document.getElementById('player-name').value.trim();
     var localPicks = getLocal('wc_picks_local');
     var savedPick = name ? (localPicks[name] || {}) : {};
@@ -629,13 +630,10 @@ function init() {
   });
 
   // Restore saved values
-  var savedUrl = getSheetUrl();
-  if(savedUrl) {
-    document.getElementById('sheet-url').value = savedUrl;
-    setBanner('ok','🟢 Google Sheets conectado');
-  } else {
-    setBanner('warn','⚠️ Google Sheets no conectado — ve a la pestaña Configuración');
-  }
+  var savedUrl = localStorage.getItem('wc_sheet_url') || HARDCODED_SHEET_URL;
+  document.getElementById('sheet-url').value = savedUrl;
+  localStorage.setItem('wc_sheet_url', savedUrl);
+  setBanner('ok','🟢 Google Sheets conectado');
   var savedChamp = localStorage.getItem('wc_champion');
   if(savedChamp) document.getElementById('actual-champion').value = savedChamp;
 
