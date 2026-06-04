@@ -315,8 +315,8 @@ function simpleScore(picks, results) {
       <select id="champion-pick"><option value="">— Selecciona un equipo —</option></select>
     </div>
     <div class="view-toggle">
-      <div class="toggle-btn" id="picks-toggle-group" onclick="setPicksView('group')">🗂️ Por Grupos</div>
-      <div class="toggle-btn" id="picks-toggle-chrono" onclick="setPicksView('chrono')">🕐 Cronológico</div>
+      <div class="toggle-btn" id="picks-toggle-group">🗂️ Por Grupos</div>
+      <div class="toggle-btn" id="picks-toggle-chrono">🕐 Cronológico</div>
     </div>
   </div>
   <div id="matches-container"></div>
@@ -341,8 +341,8 @@ function simpleScore(picks, results) {
     <h2>🔧 Admin — Introducir Resultados</h2>
     <div class="info-box">Solo el organizador necesita esta pestaña. Introduce los resultados reales — los puntos se recalculan automáticamente.</div>
     <div class="view-toggle">
-      <div class="toggle-btn" id="admin-toggle-group" onclick="setAdminView('group')">🗂️ Por Grupos</div>
-      <div class="toggle-btn" id="admin-toggle-chrono" onclick="setAdminView('chrono')">🕐 Cronológico</div>
+      <div class="toggle-btn" id="admin-toggle-group">🗂️ Por Grupos</div>
+      <div class="toggle-btn" id="admin-toggle-chrono">🕐 Cronológico</div>
     </div>
     <div id="admin-matches"></div>
     <button class="btn btn-gold" id="results-btn" style="width:100%;margin-top:14px;">💾 Guardar Resultados y Actualizar Clasificación</button>
@@ -661,7 +661,10 @@ function init() {
 
   // Wire up buttons
   document.getElementById('test-btn').addEventListener('click', saveAndTestUrl);
-  document.getElementById('load-btn').addEventListener('click', loadPicksFromSheet);
+  document.getElementById('picks-toggle-group').addEventListener('click', function(){ setPicksView('group'); });
+  document.getElementById('picks-toggle-chrono').addEventListener('click', function(){ setPicksView('chrono'); });
+  document.getElementById('admin-toggle-group').addEventListener('click', function(){ setAdminView('group'); });
+  document.getElementById('admin-toggle-chrono').addEventListener('click', function(){ setAdminView('chrono'); });
   document.getElementById('submit-btn').addEventListener('click', submitPicks);
   document.getElementById('refresh-lb-btn').addEventListener('click', loadAndRenderLeaderboard);
   document.getElementById('results-btn').addEventListener('click', saveResults);
