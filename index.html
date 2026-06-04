@@ -91,8 +91,10 @@
   .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .url-status{font-size:0.8rem;margin-top:5px;min-height:18px;}
-  .url-status.ok{color:var(--green);}
-  .url-status.err{color:var(--red);}
+  .view-toggle{display:flex;gap:6px;margin-bottom:16px;}
+  .toggle-btn{flex:1;padding:9px 12px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:1px;cursor:pointer;border:2px solid var(--border);background:transparent;color:var(--muted);transition:all 0.2s;text-align:center;}
+  .toggle-btn.active{background:rgba(0,200,83,0.12);border-color:var(--green);color:var(--green);}
+  .toggle-btn:hover:not(.active){border-color:var(--muted);color:var(--text);}
   .match-pts{margin-top:8px;padding:8px 12px;border-radius:8px;font-size:0.82rem;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .match-pts.scored{background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.2);color:#a5d6a7;}
   .match-pts.missed{background:rgba(255,61,61,0.07);border:1px solid rgba(255,61,61,0.2);color:#ef9a9a;}
@@ -312,6 +314,10 @@ function simpleScore(picks, results) {
       <label>👑 Campeón del Torneo — 30 pts</label>
       <select id="champion-pick"><option value="">— Selecciona un equipo —</option></select>
     </div>
+    <div class="view-toggle">
+      <div class="toggle-btn" id="picks-toggle-group" onclick="setPicksView('group')">🗂️ Por Grupos</div>
+      <div class="toggle-btn" id="picks-toggle-chrono" onclick="setPicksView('chrono')">🕐 Cronológico</div>
+    </div>
   </div>
   <div id="matches-container"></div>
   <button class="btn btn-green" id="submit-btn" style="width:100%;margin-top:8px;">📤 Enviar Pronósticos</button>
@@ -334,6 +340,10 @@ function simpleScore(picks, results) {
   <div class="card">
     <h2>🔧 Admin — Introducir Resultados</h2>
     <div class="info-box">Solo el organizador necesita esta pestaña. Introduce los resultados reales — los puntos se recalculan automáticamente.</div>
+    <div class="view-toggle">
+      <div class="toggle-btn" id="admin-toggle-group" onclick="setAdminView('group')">🗂️ Por Grupos</div>
+      <div class="toggle-btn" id="admin-toggle-chrono" onclick="setAdminView('chrono')">🕐 Cronológico</div>
+    </div>
     <div id="admin-matches"></div>
     <button class="btn btn-gold" id="results-btn" style="width:100%;margin-top:14px;">💾 Guardar Resultados y Actualizar Clasificación</button>
     <div class="success-msg" id="admin-success">✅ ¡Resultados guardados! Clasificación actualizada para todos.</div>
@@ -630,10 +640,9 @@ function showTab(id) {
       }
     }
     var savedPick = name ? (localPicks[name] || {}) : {};
-    // Restore champion pick
+    // Restore and lock champion pick if already set
     if(savedPick.champion) {
-      var champSel = document.getElementById('champion-pick');
-      if(champSel) champSel.value = savedPick.champion;
+      lockChampionPick(savedPick.champion);
     }
     Promise.all([sheetGet('getResults')]).then(function(vals) {
       var sr = vals[0];
@@ -686,6 +695,7 @@ function init() {
   var savedChamp = localStorage.getItem('wc_champion');
   if(savedChamp) document.getElementById('actual-champion').value = savedChamp;
 
+  initToggles();
   renderMatchCards({}, getLocal('wc_results_local'));
   renderAdminMatches();
 }
@@ -791,25 +801,81 @@ function lockFields(div, matchId) {
   }
 }
 
+// ════════ VIEW TOGGLE ════════
+function getPicksView() { return localStorage.getItem('wc_picks_view') || 'group'; }
+function getAdminView() { return localStorage.getItem('wc_admin_view') || 'group'; }
+
+function setPicksView(view) {
+  localStorage.setItem('wc_picks_view', view);
+  updateToggleUI('picks-toggle-group', 'picks-toggle-chrono', view);
+  var name = document.getElementById('player-name').value.trim();
+  var local = getLocal('wc_picks_local');
+  var savedPick = name ? (local[name] || {}) : {};
+  var results = getLocal('wc_results_local');
+  renderMatchCards(savedPick, results);
+}
+
+function setAdminView(view) {
+  localStorage.setItem('wc_admin_view', view);
+  updateToggleUI('admin-toggle-group', 'admin-toggle-chrono', view);
+  renderAdminMatches();
+}
+
+function updateToggleUI(groupId, chronoId, view) {
+  var gBtn = document.getElementById(groupId);
+  var cBtn = document.getElementById(chronoId);
+  if(!gBtn || !cBtn) return;
+  if(view === 'group') {
+    gBtn.classList.add('active'); cBtn.classList.remove('active');
+  } else {
+    cBtn.classList.add('active'); gBtn.classList.remove('active');
+  }
+}
+
+function initToggles() {
+  updateToggleUI('picks-toggle-group','picks-toggle-chrono', getPicksView());
+  updateToggleUI('admin-toggle-group','admin-toggle-chrono', getAdminView());
+}
+
 // ════════ MATCH CARDS ════════
 function renderMatchCards(picks, results) {
   picks = picks || {};
   results = results || getLocal('wc_results_local');
+  var view = getPicksView();
   var cont = document.getElementById('matches-container');
-  var curRound = ''; cont.innerHTML='';
   var gridMap = {};
+  cont.innerHTML = '';
 
-  MATCHES.forEach(function(m) {
-    if(!m.group) return;
-    if(m.round !== curRound) {
-      curRound = m.round;
+  // Get group stage matches and sort based on view
+  var groupMatches = MATCHES.filter(function(m){ return m.group; });
+  if(view === 'chrono') {
+    groupMatches = groupMatches.slice().sort(function(a, b) {
+      var ta = KICKOFF_UTC[a.id] ? new Date(KICKOFF_UTC[a.id]).getTime() : 0;
+      var tb = KICKOFF_UTC[b.id] ? new Date(KICKOFF_UTC[b.id]).getTime() : 0;
+      return ta - tb;
+    });
+  }
+
+  var curRound = '';
+
+  groupMatches.forEach(function(m) {
+    // In chrono view use date as section header, in group view use round name
+    var sectionKey = view === 'chrono'
+      ? (KICKOFF_UTC[m.id] ? new Date(KICKOFF_UTC[m.id]).toDateString() : m.round)
+      : m.round;
+    var sectionLabel = view === 'chrono'
+      ? (m.kickoff ? m.kickoff.split('·')[0].trim() : m.round)
+      : m.round;
+
+    if(sectionKey !== curRound) {
+      curRound = sectionKey;
       var c = document.createElement('div'); c.className='card';
-      var gridId = 'rnd-'+slug(m.round);
-      c.innerHTML = '<h2>⚽ '+m.round+'</h2><div class="matches-grid" id="'+gridId+'"></div>';
+      var gridId = 'rnd-'+slug(sectionKey);
+      c.innerHTML = '<h2>'+(view==='chrono'?'🕐':'⚽')+' '+sectionLabel+'</h2><div class="matches-grid" id="'+gridId+'"></div>';
       cont.appendChild(c);
-      gridMap[m.round] = c.querySelector('.matches-grid');
+      gridMap[sectionKey] = c.querySelector('.matches-grid');
     }
-    var g = gridMap[m.round];
+    var g = gridMap[sectionKey];
     var ht = td(m.home), at = td(m.away);
     var hRank = ht.rank ? '#'+ht.rank+' FIFA' : '';
     var aRank = at.rank ? '#'+at.rank+' FIFA' : '';
@@ -925,6 +991,30 @@ function renderMatchCards(picks, results) {
   });
 }
 
+function lockChampionPick(champion) {
+  var sel = document.getElementById('champion-pick');
+  var container = sel ? sel.parentElement : null;
+  if(!sel || !champion) return;
+  sel.value = champion;
+  sel.disabled = true;
+  sel.style.opacity = '0.7';
+  sel.style.cursor = 'not-allowed';
+  // Add locked badge next to the label
+  var lbl = document.querySelector('label[for="champion-pick"]') || (container ? container.previousElementSibling : null);
+  var existingBadge = document.getElementById('champ-lock-badge');
+  if(!existingBadge) {
+    var badge = document.createElement('span');
+    badge.id = 'champ-lock-badge';
+    badge.style.cssText = 'margin-left:8px;background:rgba(255,61,61,0.12);color:var(--red);border:1px solid rgba(255,61,61,0.3);border-radius:6px;padding:2px 8px;font-size:0.72rem;font-weight:700;letter-spacing:1px;';
+    badge.textContent = '🔒 FIJO';
+    var champLabel = document.querySelector('#tab-enter label');
+    // Find the champion label specifically
+    document.querySelectorAll('#tab-enter label').forEach(function(l){
+      if(l.textContent.indexOf('Campeón') > -1) l.appendChild(badge);
+    });
+  }
+}
+
 // ════════ LOAD PICKS FROM SHEET ════════
 function loadPicksFromSheet() {
   var name = document.getElementById('player-name').value.trim();
@@ -965,10 +1055,9 @@ function loadPicksFromSheet() {
     local[name] = picks;
     setLocal('wc_picks_local', local);
 
-    // Restore champion
+    // Restore champion and lock it
     if(picks.champion) {
-      var champSel = document.getElementById('champion-pick');
-      if(champSel) champSel.value = picks.champion;
+      lockChampionPick(picks.champion);
     }
 
     // Render match cards with restored picks and latest results
@@ -985,7 +1074,16 @@ function loadPicksFromSheet() {
 function submitPicks() {
   var name = document.getElementById('player-name').value.trim();
   if(!name){alert('Por favor escribe tu nombre primero.');return;}
-  var picks = {name:name,champion:document.getElementById('champion-pick').value,matches:{},submittedAt:new Date().toISOString()};
+
+  // Preserve the original champion pick — never overwrite once set
+  var local = getLocal('wc_picks_local');
+  var existing = local[name] || {};
+  var originalChampion = existing.champion || '';
+  var currentChampion = document.getElementById('champion-pick').value;
+  // If player already had a champion saved, keep it — ignore any new selection
+  var champion = originalChampion || currentChampion;
+
+  var picks = {name:name, champion:champion, matches:{}, submittedAt:existing.submittedAt||new Date().toISOString()};
   MATCHES.forEach(function(m){
     var pw = document.getElementById('pw-'+m.id);
     var ph = document.getElementById('ph-'+m.id);
@@ -993,7 +1091,7 @@ function submitPicks() {
     var pm = document.getElementById('pm-'+m.id);
     picks.matches[m.id]={winner:pw?pw.value:'',home:ph?ph.value:'',away:pa?pa.value:'',method:pm?pm.value:''};
   });
-  var local = getLocal('wc_picks_local'); local[name]=picks; setLocal('wc_picks_local',local);
+  local[name]=picks; setLocal('wc_picks_local',local);
   var btn = document.getElementById('submit-btn');
   btn.innerHTML='<span class="spinner"></span>Enviando…'; btn.disabled=true;
   sheetPost({action:'savePick',name:name,picks:picks}).then(function(ok){
@@ -1008,13 +1106,33 @@ function submitPicks() {
 function renderAdminMatches() {
   var cont = document.getElementById('admin-matches');
   var results = getLocal('wc_results_local');
+  var view = getAdminView();
   var curRound=''; cont.innerHTML='';
-  MATCHES.forEach(function(m){
-    if(m.round!==curRound){
-      curRound=m.round;
-      var lbl=document.createElement('div');
-      lbl.style.cssText="font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:2px;color:var(--muted);margin:18px 0 8px;";
-      lbl.textContent=m.round; cont.appendChild(lbl);
+
+  var matchList = MATCHES.slice();
+  if(view === 'chrono') {
+    matchList = matchList.sort(function(a, b) {
+      var ta = KICKOFF_UTC[a.id] ? new Date(KICKOFF_UTC[a.id]).getTime() : 9999999999999;
+      var tb = KICKOFF_UTC[b.id] ? new Date(KICKOFF_UTC[b.id]).getTime() : 9999999999999;
+      return ta - tb;
+    });
+  }
+
+  matchList.forEach(function(m){
+    // Section header
+    var sectionKey = view === 'chrono'
+      ? (KICKOFF_UTC[m.id] ? new Date(KICKOFF_UTC[m.id]).toDateString() : m.round)
+      : m.round;
+    var sectionLabel = view === 'chrono'
+      ? (m.kickoff ? m.kickoff.split('·')[0].trim() : m.round)
+      : m.round;
+
+    if(sectionKey !== curRound) {
+      curRound = sectionKey;
+      var lbl = document.createElement('div');
+      lbl.style.cssText = "font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:2px;color:var(--muted);margin:18px 0 8px;";
+      lbl.textContent = (view==='chrono'?'🕐 ':'')+sectionLabel;
+      cont.appendChild(lbl);
     }
     var r=results[m.id]||{};
     var ht=td(m.home), at=td(m.away);
@@ -1147,6 +1265,21 @@ function generateWhatsapp() {
   var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   var dateStr = today.getDate()+' '+months[today.getMonth()]+' '+today.getFullYear();
 
+  // Build next 24 hours fixtures using KICKOFF_UTC
+  var now = new Date();
+  var in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  var upcomingLines = '';
+  MATCHES.forEach(function(m) {
+    if(!m.kickoff || !m.city || !KICKOFF_UTC[m.id]) return;
+    var ko = new Date(KICKOFF_UTC[m.id]);
+    if(ko > now && ko <= in24h) {
+      var ht = td(m.home), at = td(m.away);
+      // Extract just time and timezone from kickoff string e.g. "Thu 11 Jun · 20:00 BST"
+      var timePart = m.kickoff.split('·')[1] ? m.kickoff.split('·')[1].trim() : m.kickoff;
+      upcomingLines += ht.flag+' '+ht.name+' vs '+at.name+' '+at.flag+' · '+timePart+' · '+m.city+'\n';
+    }
+  });
+
   var msg =
     '🏆 Quiniela Mundial 2026 — Día '+day+'\n'+
     '📅 '+dateStr+'\n'+
@@ -1155,6 +1288,7 @@ function generateWhatsapp() {
     '\n🏅 Clasificación\n'+
     lbLines+
     (gapLine ? '📊 '+gapLine+'\n' : '')+
+    (upcomingLines ? '\n📅 Próximos partidos — próximas 24 horas\n'+upcomingLines : '')+
     '\nTu instinto natural · Vencer a tu rival\n'+
     'Tienes que pelear por una estrella 🏆';
 
