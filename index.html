@@ -589,7 +589,7 @@ function getSheetUrl() { return localStorage.getItem('wc_sheet_url') || HARDCODE
 // ════════ SHEET API ════════
 function sheetGet(action) {
   var url = getSheetUrl(); if(!url) return Promise.resolve(null);
-  return fetch(url+'?action='+action+'&t='+Date.now())
+  return fetch(url+'?action='+action+'&t='+Date.now(), {redirect:'follow'})
     .then(function(r){return r.json();})
     .then(function(j){return j.ok?j:null;})
     .catch(function(){return null;});
@@ -1047,6 +1047,13 @@ function loadPicksFromSheet() {
     }
 
     var picks = sp.picks[name];
+    // Try case-insensitive match if exact match not found
+    if(!picks) {
+      var nameLower = name.toLowerCase();
+      Object.keys(sp.picks).forEach(function(k) {
+        if(k.toLowerCase() === nameLower) picks = sp.picks[k];
+      });
+    }
     if(!picks) {
       status.textContent = '⚠️ No se encontraron pronósticos para "' + name + '". Comprueba que el nombre sea exactamente igual al que usaste antes.';
       status.style.color = 'var(--gold)';
