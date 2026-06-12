@@ -1220,9 +1220,34 @@ function saveChampion() {
 // ════════ WHATSAPP SUMMARY ════════
 function generateWhatsapp() {
   var day = document.getElementById('wa-day').value || '?';
-  var results = getLocal('wc_results_local');
-  var allPicks = getLocal('wc_picks_local');
+  var btn = document.getElementById('wa-btn');
+  btn.innerHTML = '<span class="spinner"></span>Cargando…';
+  btn.disabled = true;
 
+  Promise.all([sheetGet('getPicks'), sheetGet('getResults')]).then(function(vals) {
+    btn.innerHTML = '📋 Generar y Copiar Resumen';
+    btn.disabled = false;
+
+    var sp = vals[0], sr = vals[1];
+    var results = (sr && sr.results) ? sr.results : getLocal('wc_results_local');
+    var allPicks = (sp && sp.picks) ? sp.picks : getLocal('wc_picks_local');
+
+    // Also update localStorage with fresh data
+    if(sr && sr.results) setLocal('wc_results_local', sr.results);
+    if(sp && sp.picks) setLocal('wc_picks_local', sp.picks);
+
+    buildWhatsappMessage(day, results, allPicks);
+  }).catch(function() {
+    btn.innerHTML = '📋 Generar y Copiar Resumen';
+    btn.disabled = false;
+    // Fall back to local data if sheet unavailable
+    var results = getLocal('wc_results_local');
+    var allPicks = getLocal('wc_picks_local');
+    buildWhatsappMessage(day, results, allPicks);
+  });
+}
+
+function buildWhatsappMessage(day, results, allPicks) {
   // Build today's results lines — only matches with results entered
   var resultLines = '';
   var matchCount = 0;
