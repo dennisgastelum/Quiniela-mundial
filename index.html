@@ -666,25 +666,30 @@ function showTab(id) {
 }
 
 // ════════ INIT ════════
+function wire(id, event, fn) {
+  var el = document.getElementById(id);
+  if(el) el.addEventListener(event, fn);
+}
+
 function init() {
   // Wire up tabs
   document.querySelectorAll('.tab').forEach(function(tab) {
     tab.addEventListener('click', function() { showTab(tab.dataset.tab); });
   });
 
-  // Wire up buttons
-  document.getElementById('test-btn').addEventListener('click', saveAndTestUrl);
-  document.getElementById('load-btn').addEventListener('click', loadPicksFromSheet);
-  document.getElementById('picks-toggle-group').addEventListener('click', function(){ setPicksView('group'); });
-  document.getElementById('picks-toggle-chrono').addEventListener('click', function(){ setPicksView('chrono'); });
-  document.getElementById('admin-toggle-group').addEventListener('click', function(){ setAdminView('group'); });
-  document.getElementById('admin-toggle-chrono').addEventListener('click', function(){ setAdminView('chrono'); });
-  document.getElementById('submit-btn').addEventListener('click', submitPicks);
-  document.getElementById('refresh-lb-btn').addEventListener('click', loadAndRenderLeaderboard);
-  document.getElementById('results-btn').addEventListener('click', saveResults);
-  document.getElementById('champ-btn').addEventListener('click', saveChampion);
-  document.getElementById('wa-btn').addEventListener('click', generateWhatsapp);
-  document.getElementById('sheet-url').addEventListener('input', clearUrlStatus);
+  // Wire up buttons — null-safe so one missing element can't crash everything
+  wire('test-btn',            'click', saveAndTestUrl);
+  wire('load-btn',            'click', loadPicksFromSheet);
+  wire('picks-toggle-group',  'click', function(){ setPicksView('group'); });
+  wire('picks-toggle-chrono', 'click', function(){ setPicksView('chrono'); });
+  wire('admin-toggle-group',  'click', function(){ setAdminView('group'); });
+  wire('admin-toggle-chrono', 'click', function(){ setAdminView('chrono'); });
+  wire('submit-btn',          'click', submitPicks);
+  wire('refresh-lb-btn',      'click', loadAndRenderLeaderboard);
+  wire('results-btn',         'click', saveResults);
+  wire('champ-btn',           'click', saveChampion);
+  wire('wa-btn',              'click', generateWhatsapp);
+  wire('sheet-url',           'input', clearUrlStatus);
 
   // Populate team dropdowns sorted by rank
   var teamKeys = Object.keys(TEAM_DATA).filter(function(k){
