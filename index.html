@@ -1042,54 +1042,73 @@ function loadPicksFromSheet() {
     return;
   }
 
+  // First try localStorage — instant restore if available
+  var local = getLocal('wc_picks_local');
+  var localPicks = local[name];
+  if(!localPicks) {
+    // Try case-insensitive match in localStorage too
+    var nameLower = name.toLowerCase();
+    Object.keys(local).forEach(function(k) {
+      if(k.toLowerCase() === nameLower) localPicks = local[k];
+    });
+  }
+
   var btn = document.getElementById('load-btn');
   btn.innerHTML = '<span class="spinner"></span>Cargando…';
   btn.disabled = true;
-  status.textContent = '';
+  status.textContent = '⏳ Conectando con Google Sheets…';
+  status.style.color = 'var(--muted)';
 
-  Promise.all([sheetGet('getPicks'), sheetGet('getResults')]).then(function(vals) {
-    btn.innerHTML = '📥 Cargar mis pronósticos';
-    btn.disabled = false;
+  sheetGet('getPicks').then(function(sp) {
+    sheetGet('getResults').then(function(sr) {
+      btn.innerHTML = '📥 Cargar mis pronósticos';
+      btn.disabled = false;
 
-    var sp = vals[0], sr = vals[1];
+      // If sheet unreachable, fall back to localStorage
+      if(!sp || !sp.picks) {
+        if(localPicks) {
+          if(localPicks.champion) lockChampionPick(localPicks.champion);
+          var results = getLocal('wc_results_local');
+          renderMatchCards(localPicks, results);
+          var matchCount = localPicks.matches ? Object.values(localPicks.matches).filter(function(m){ return m.winner; }).length : 0;
+          status.textContent = '✅ '+matchCount+' pronósticos cargados (desde dispositivo — Google Sheets no disponible).';
+          status.style.color = 'var(--gold)';
+        } else {
+          status.textContent = '❌ No se pudo conectar con Google Sheets y no hay datos locales. Comprueba que la URL de Apps Script sea correcta en Configuración.';
+          status.style.color = 'var(--red)';
+        }
+        return;
+      }
 
-    if(!sp || !sp.picks) {
-      status.textContent = '❌ No se pudo conectar con Google Sheets. Comprueba tu conexión.';
-      status.style.color = 'var(--red)';
-      return;
-    }
+      var picks = sp.picks[name];
+      // Try case-insensitive match
+      if(!picks) {
+        var nameLower = name.toLowerCase();
+        Object.keys(sp.picks).forEach(function(k) {
+          if(k.toLowerCase() === nameLower) picks = sp.picks[k];
+        });
+      }
+      if(!picks) {
+        // Show available names to help diagnose
+        var available = Object.keys(sp.picks).join(', ');
+        status.textContent = '⚠️ No se encontraron pronósticos para "'+name+'". Nombres en la hoja: '+available;
+        status.style.color = 'var(--gold)';
+        return;
+      }
 
-    var picks = sp.picks[name];
-    // Try case-insensitive match if exact match not found
-    if(!picks) {
-      var nameLower = name.toLowerCase();
-      Object.keys(sp.picks).forEach(function(k) {
-        if(k.toLowerCase() === nameLower) picks = sp.picks[k];
-      });
-    }
-    if(!picks) {
-      status.textContent = '⚠️ No se encontraron pronósticos para "' + name + '". Comprueba que el nombre sea exactamente igual al que usaste antes.';
-      status.style.color = 'var(--gold)';
-      return;
-    }
+      // Save to localStorage
+      local[name] = picks;
+      setLocal('wc_picks_local', local);
 
-    // Save to localStorage so it persists
-    var local = getLocal('wc_picks_local');
-    local[name] = picks;
-    setLocal('wc_picks_local', local);
+      if(picks.champion) lockChampionPick(picks.champion);
 
-    // Restore champion and lock it
-    if(picks.champion) {
-      lockChampionPick(picks.champion);
-    }
+      var results = (sr && sr.results) ? sr.results : getLocal('wc_results_local');
+      renderMatchCards(picks, results);
 
-    // Render match cards with restored picks and latest results
-    var results = (sr && sr.results) ? sr.results : getLocal('wc_results_local');
-    renderMatchCards(picks, results);
-
-    var matchCount = picks.matches ? Object.values(picks.matches).filter(function(m){ return m.winner; }).length : 0;
-    status.textContent = '✅ ' + matchCount + ' pronósticos cargados desde Google Sheets.';
-    status.style.color = 'var(--green)';
+      var matchCount = picks.matches ? Object.values(picks.matches).filter(function(m){ return m.winner; }).length : 0;
+      status.textContent = '✅ '+matchCount+' pronósticos cargados desde Google Sheets.';
+      status.style.color = 'var(--green)';
+    });
   });
 }
 
