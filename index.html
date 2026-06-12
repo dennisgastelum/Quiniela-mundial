@@ -486,93 +486,106 @@ var GROUPS = {
 };
 
 var MATCHES = [
-  {id:"A1",group:"A",round:"Grupo A",home:"Mexico",away:"South Africa",kickoff:"Thu 11 Jun · 20:00 BST",city:"Mexico City"},
-  {id:"A2",group:"A",round:"Grupo A",home:"South Korea",away:"Czechia",kickoff:"Thu 11 Jun · 21:00 BST",city:"Guadalajara"},
-  {id:"A3",group:"A",round:"Grupo A",home:"South Africa",away:"Czechia",kickoff:"Wed 18 Jun · 17:00 BST",city:"Atlanta"},
-  {id:"A4",group:"A",round:"Grupo A",home:"Mexico",away:"South Korea",kickoff:"Tue 17 Jun · 23:00 BST",city:"Guadalajara"},
-  {id:"A5",group:"A",round:"Grupo A",home:"Czechia",away:"Mexico",kickoff:"Wed 24 Jun · 00:00 BST",city:"Dallas"},
-  {id:"A6",group:"A",round:"Grupo A",home:"South Africa",away:"South Korea",kickoff:"Wed 24 Jun · 00:00 BST",city:"Houston"},
-  {id:"B1",group:"B",round:"Grupo B",home:"Canada",away:"Bosnia and Herzegovina",kickoff:"Fri 12 Jun · 20:00 BST",city:"Toronto"},
-  {id:"B2",group:"B",round:"Grupo B",home:"Qatar",away:"Switzerland",kickoff:"Sat 13 Jun · 20:00 BST",city:"Los Angeles"},
-  {id:"B3",group:"B",round:"Grupo B",home:"Switzerland",away:"Bosnia and Herzegovina",kickoff:"Wed 18 Jun · 20:00 BST",city:"Los Angeles"},
-  {id:"B4",group:"B",round:"Grupo B",home:"Canada",away:"Qatar",kickoff:"Wed 17 Jun · 23:00 BST",city:"Vancouver"},
-  {id:"B5",group:"B",round:"Grupo B",home:"Switzerland",away:"Canada",kickoff:"Tue 24 Jun · 20:00 BST",city:"Kansas City"},
-  {id:"B6",group:"B",round:"Grupo B",home:"Bosnia and Herzegovina",away:"Qatar",kickoff:"Tue 24 Jun · 20:00 BST",city:"Seattle"},
-  {id:"C1",group:"C",round:"Grupo C",home:"Brazil",away:"Morocco",kickoff:"Fri 12 Jun · 23:00 BST",city:"New York/NJ"},
-  {id:"C2",group:"C",round:"Grupo C",home:"Haiti",away:"Scotland",kickoff:"Sat 13 Jun · 02:00 BST",city:"San Francisco"},
-  {id:"C3",group:"C",round:"Grupo C",home:"Scotland",away:"Morocco",kickoff:"Wed 18 Jun · 23:00 BST",city:"Boston"},
-  {id:"C4",group:"C",round:"Grupo C",home:"Brazil",away:"Haiti",kickoff:"Thu 19 Jun · 02:00 BST",city:"Philadelphia"},
-  {id:"C5",group:"C",round:"Grupo C",home:"Scotland",away:"Brazil",kickoff:"Tue 24 Jun · 23:00 BST",city:"Dallas"},
-  {id:"C6",group:"C",round:"Grupo C",home:"Morocco",away:"Haiti",kickoff:"Tue 24 Jun · 23:00 BST",city:"Atlanta"},
-  {id:"D1",group:"D",round:"Grupo D",home:"USA",away:"Paraguay",kickoff:"Thu 12 Jun · 02:00 BST",city:"Los Angeles"},
-  {id:"D2",group:"D",round:"Grupo D",home:"Australia",away:"Türkiye",kickoff:"Sat 13 Jun · 05:00 BST",city:"San Francisco"},
-  {id:"D3",group:"D",round:"Grupo D",home:"USA",away:"Australia",kickoff:"Thu 19 Jun · 20:00 BST",city:"Seattle"},
-  {id:"D4",group:"D",round:"Grupo D",home:"Türkiye",away:"Paraguay",kickoff:"Thu 19 Jun · 05:00 BST",city:"San Francisco"},
-  {id:"D5",group:"D",round:"Grupo D",home:"Türkiye",away:"USA",kickoff:"Wed 25 Jun · 03:00 BST",city:"Dallas"},
-  {id:"D6",group:"D",round:"Grupo D",home:"Paraguay",away:"Australia",kickoff:"Wed 25 Jun · 03:00 BST",city:"Kansas City"},
-  {id:"E1",group:"E",round:"Grupo E",home:"Germany",away:"Curaçao",kickoff:"Sun 14 Jun · 18:00 BST",city:"Philadelphia"},
-  {id:"E2",group:"E",round:"Grupo E",home:"Ivory Coast",away:"Ecuador",kickoff:"Sun 14 Jun · 00:00 BST",city:"Miami"},
-  {id:"E3",group:"E",round:"Grupo E",home:"Germany",away:"Ivory Coast",kickoff:"Sat 20 Jun · 21:00 BST",city:"Toronto"},
-  {id:"E4",group:"E",round:"Grupo E",home:"Ecuador",away:"Curaçao",kickoff:"Sat 20 Jun · 01:00 BST",city:"Kansas City"},
-  {id:"E5",group:"E",round:"Grupo E",home:"Ecuador",away:"Germany",kickoff:"Wed 25 Jun · 21:00 BST",city:"Boston"},
-  {id:"E6",group:"E",round:"Grupo E",home:"Curaçao",away:"Ivory Coast",kickoff:"Wed 25 Jun · 21:00 BST",city:"Houston"},
-  {id:"F1",group:"F",round:"Grupo F",home:"Netherlands",away:"Japan",kickoff:"Sun 14 Jun · 21:00 BST",city:"Los Angeles"},
-  {id:"F2",group:"F",round:"Grupo F",home:"Sweden",away:"Tunisia",kickoff:"Sun 14 Jun · 03:00 BST",city:"Miami"},
-  {id:"F3",group:"F",round:"Grupo F",home:"Netherlands",away:"Sweden",kickoff:"Sat 20 Jun · 18:00 BST",city:"Houston"},
-  {id:"F4",group:"F",round:"Grupo F",home:"Tunisia",away:"Japan",kickoff:"Sat 20 Jun · 05:00 BST",city:"Vancouver"},
-  {id:"F5",group:"F",round:"Grupo F",home:"Japan",away:"Sweden",kickoff:"Wed 25 Jun · 00:00 BST",city:"Seattle"},
-  {id:"F6",group:"F",round:"Grupo F",home:"Tunisia",away:"Netherlands",kickoff:"Wed 25 Jun · 00:00 BST",city:"Philadelphia"},
-  {id:"G1",group:"G",round:"Grupo G",home:"Belgium",away:"Egypt",kickoff:"Mon 15 Jun · 20:00 BST",city:"Seattle"},
-  {id:"G2",group:"G",round:"Grupo G",home:"Iran",away:"New Zealand",kickoff:"Mon 15 Jun · 02:00 BST",city:"Los Angeles"},
-  {id:"G3",group:"G",round:"Grupo G",home:"Belgium",away:"Iran",kickoff:"Sun 21 Jun · 20:00 BST",city:"Los Angeles"},
-  {id:"G4",group:"G",round:"Grupo G",home:"New Zealand",away:"Egypt",kickoff:"Sun 21 Jun · 02:00 BST",city:"Miami"},
-  {id:"G5",group:"G",round:"Grupo G",home:"New Zealand",away:"Belgium",kickoff:"Thu 26 Jun · 04:00 BST",city:"San Francisco"},
-  {id:"G6",group:"G",round:"Grupo G",home:"Egypt",away:"Iran",kickoff:"Thu 26 Jun · 04:00 BST",city:"Dallas"},
-  {id:"H1",group:"H",round:"Grupo H",home:"Spain",away:"Cape Verde",kickoff:"Mon 15 Jun · 17:00 BST",city:"Atlanta"},
-  {id:"H2",group:"H",round:"Grupo H",home:"Saudi Arabia",away:"Uruguay",kickoff:"Sun 14 Jun · 23:00 BST",city:"Miami"},
-  {id:"H3",group:"H",round:"Grupo H",home:"Spain",away:"Saudi Arabia",kickoff:"Sun 21 Jun · 17:00 BST",city:"Atlanta"},
-  {id:"H4",group:"H",round:"Grupo H",home:"Uruguay",away:"Cape Verde",kickoff:"Sun 21 Jun · 00:00 BST",city:"Los Angeles"},
-  {id:"H5",group:"H",round:"Grupo H",home:"Uruguay",away:"Spain",kickoff:"Thu 26 Jun · 01:00 BST",city:"Kansas City"},
-  {id:"H6",group:"H",round:"Grupo H",home:"Cape Verde",away:"Saudi Arabia",kickoff:"Thu 26 Jun · 01:00 BST",city:"Seattle"},
-  {id:"I1",group:"I",round:"Grupo I",home:"France",away:"Senegal",kickoff:"Tue 16 Jun · 20:00 BST",city:"New York/NJ"},
-  {id:"I2",group:"I",round:"Grupo I",home:"Iraq",away:"Norway",kickoff:"Mon 15 Jun · 23:00 BST",city:"Boston"},
-  {id:"I3",group:"I",round:"Grupo I",home:"France",away:"Iraq",kickoff:"Mon 22 Jun · 22:00 BST",city:"Seattle"},
-  {id:"I4",group:"I",round:"Grupo I",home:"Norway",away:"Senegal",kickoff:"Mon 22 Jun · 01:00 BST",city:"Atlanta"},
-  {id:"I5",group:"I",round:"Grupo I",home:"Norway",away:"France",kickoff:"Thu 26 Jun · 20:00 BST",city:"San Francisco"},
-  {id:"I6",group:"I",round:"Grupo I",home:"Senegal",away:"Iraq",kickoff:"Thu 26 Jun · 20:00 BST",city:"Houston"},
-  {id:"J1",group:"J",round:"Grupo J",home:"Argentina",away:"Algeria",kickoff:"Tue 16 Jun · 02:00 BST",city:"Kansas City"},
-  {id:"J2",group:"J",round:"Grupo J",home:"Austria",away:"Jordan",kickoff:"Wed 17 Jun · 05:00 BST",city:"San Francisco"},
-  {id:"J3",group:"J",round:"Grupo J",home:"Argentina",away:"Austria",kickoff:"Mon 22 Jun · 18:00 BST",city:"Dallas"},
-  {id:"J4",group:"J",round:"Grupo J",home:"Jordan",away:"Algeria",kickoff:"Mon 22 Jun · 04:00 BST",city:"Houston"},
-  {id:"J5",group:"J",round:"Grupo J",home:"Jordan",away:"Argentina",kickoff:"Fri 27 Jun · 03:00 BST",city:"Miami"},
-  {id:"J6",group:"J",round:"Grupo J",home:"Algeria",away:"Austria",kickoff:"Fri 27 Jun · 03:00 BST",city:"Boston"},
-  {id:"K1",group:"K",round:"Grupo K",home:"Portugal",away:"DR Congo",kickoff:"Tue 17 Jun · 18:00 BST",city:"Houston"},
-  {id:"K2",group:"K",round:"Grupo K",home:"Uzbekistan",away:"Colombia",kickoff:"Tue 17 Jun · 03:00 BST",city:"Mexico City"},
-  {id:"K3",group:"K",round:"Grupo K",home:"Portugal",away:"Uzbekistan",kickoff:"Mon 23 Jun · 18:00 BST",city:"Kansas City"},
-  {id:"K4",group:"K",round:"Grupo K",home:"Colombia",away:"DR Congo",kickoff:"Mon 23 Jun · 03:00 BST",city:"Philadelphia"},
-  {id:"K5",group:"K",round:"Grupo K",home:"Colombia",away:"Portugal",kickoff:"Fri 27 Jun · 00:30 BST",city:"Boston"},
-  {id:"K6",group:"K",round:"Grupo K",home:"DR Congo",away:"Uzbekistan",kickoff:"Fri 27 Jun · 00:30 BST",city:"Atlanta"},
-  {id:"L1",group:"L",round:"Grupo L",home:"England",away:"Croatia",kickoff:"Tue 17 Jun · 21:00 BST",city:"Dallas"},
-  {id:"L2",group:"L",round:"Grupo L",home:"Ghana",away:"Panama",kickoff:"Tue 17 Jun · 00:00 BST",city:"Toronto"},
-  {id:"L3",group:"L",round:"Grupo L",home:"England",away:"Ghana",kickoff:"Mon 23 Jun · 21:00 BST",city:"New York/NJ"},
-  {id:"L4",group:"L",round:"Grupo L",home:"Panama",away:"Croatia",kickoff:"Mon 23 Jun · 00:00 BST",city:"Toronto"},
-  {id:"L5",group:"L",round:"Grupo L",home:"Panama",away:"England",kickoff:"Fri 27 Jun · 22:00 BST",city:"Miami"},
-  {id:"L6",group:"L",round:"Grupo L",home:"Croatia",away:"Ghana",kickoff:"Fri 27 Jun · 22:00 BST",city:"Philadelphia"},
-  {id:"R32a",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32b",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32c",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32d",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32e",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32f",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32g",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32h",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"QFa",round:"Cuartos de Final",home:"TBD",away:"TBD"},
-  {id:"QFb",round:"Cuartos de Final",home:"TBD",away:"TBD"},
-  {id:"QFc",round:"Cuartos de Final",home:"TBD",away:"TBD"},
-  {id:"QFd",round:"Cuartos de Final",home:"TBD",away:"TBD"},
-  {id:"SF1",round:"Semifinal",home:"TBD",away:"TBD"},
-  {id:"SF2",round:"Semifinal",home:"TBD",away:"TBD"},
-  {id:"FIN",round:"Final",home:"TBD",away:"TBD"}
+  // ── GRUPO A ──
+  {id:"A1",group:"A",round:"Grupo A",home:"Mexico",       away:"South Africa", kickoff:"Jue 11 Jun · 14:00 CDT",city:"Mexico City"},
+  {id:"A2",group:"A",round:"Grupo A",home:"South Korea",  away:"Czechia",      kickoff:"Jue 11 Jun · 17:00 CDT",city:"Guadalajara"},
+  {id:"A3",group:"A",round:"Grupo A",home:"South Africa", away:"Czechia",      kickoff:"Mié 18 Jun · 11:00 CDT",city:"Atlanta"},
+  {id:"A4",group:"A",round:"Grupo A",home:"Mexico",       away:"South Korea",  kickoff:"Mié 18 Jun · 14:00 CDT",city:"Guadalajara"},
+  {id:"A5",group:"A",round:"Grupo A",home:"Czechia",      away:"Mexico",       kickoff:"Mar 24 Jun · 18:00 CDT",city:"Dallas"},
+  {id:"A6",group:"A",round:"Grupo A",home:"South Africa", away:"South Korea",  kickoff:"Mar 24 Jun · 18:00 CDT",city:"Houston"},
+  // ── GRUPO B ──
+  {id:"B1",group:"B",round:"Grupo B",home:"Canada",                away:"Bosnia and Herzegovina", kickoff:"Jue 12 Jun · 18:00 CDT",city:"Toronto"},
+  {id:"B2",group:"B",round:"Grupo B",home:"Qatar",                 away:"Switzerland",            kickoff:"Vie 13 Jun · 18:00 CDT",city:"Los Angeles"},
+  {id:"B3",group:"B",round:"Grupo B",home:"Switzerland",           away:"Bosnia and Herzegovina", kickoff:"Mié 18 Jun · 17:00 CDT",city:"Los Angeles"},
+  {id:"B4",group:"B",round:"Grupo B",home:"Canada",                away:"Qatar",                  kickoff:"Mié 18 Jun · 17:00 CDT",city:"Vancouver"},
+  {id:"B5",group:"B",round:"Grupo B",home:"Switzerland",           away:"Canada",                 kickoff:"Mar 24 Jun · 14:00 CDT",city:"Kansas City"},
+  {id:"B6",group:"B",round:"Grupo B",home:"Bosnia and Herzegovina",away:"Qatar",                  kickoff:"Mar 24 Jun · 14:00 CDT",city:"Seattle"},
+  // ── GRUPO C ──
+  {id:"C1",group:"C",round:"Grupo C",home:"Brazil",   away:"Morocco",  kickoff:"Jue 12 Jun · 17:00 CDT",city:"New York/NJ"},
+  {id:"C2",group:"C",round:"Grupo C",home:"Haiti",    away:"Scotland", kickoff:"Jue 12 Jun · 21:00 CDT",city:"Los Angeles"},
+  {id:"C3",group:"C",round:"Grupo C",home:"Scotland", away:"Morocco",  kickoff:"Mié 18 Jun · 18:00 CDT",city:"Boston"},
+  {id:"C4",group:"C",round:"Grupo C",home:"Brazil",   away:"Haiti",    kickoff:"Mié 18 Jun · 18:00 CDT",city:"New York/NJ"},
+  {id:"C5",group:"C",round:"Grupo C",home:"Scotland", away:"Brazil",   kickoff:"Mar 24 Jun · 18:00 CDT",city:"Dallas"},
+  {id:"C6",group:"C",round:"Grupo C",home:"Morocco",  away:"Haiti",    kickoff:"Mar 24 Jun · 18:00 CDT",city:"Atlanta"},
+  // ── GRUPO D ──
+  {id:"D1",group:"D",round:"Grupo D",home:"USA",       away:"Paraguay",  kickoff:"Jue 12 Jun · 17:00 CDT",city:"Los Angeles"},
+  {id:"D2",group:"D",round:"Grupo D",home:"Australia", away:"Türkiye",   kickoff:"Jue 12 Jun · 22:00 CDT",city:"San Francisco"},
+  {id:"D3",group:"D",round:"Grupo D",home:"USA",       away:"Australia", kickoff:"Jue 19 Jun · 14:00 CDT",city:"Seattle"},
+  {id:"D4",group:"D",round:"Grupo D",home:"Türkiye",   away:"Paraguay",  kickoff:"Jue 19 Jun · 22:00 CDT",city:"San Francisco"},
+  {id:"D5",group:"D",round:"Grupo D",home:"Türkiye",   away:"USA",       kickoff:"Mar 24 Jun · 21:00 CDT",city:"Dallas"},
+  {id:"D6",group:"D",round:"Grupo D",home:"Paraguay",  away:"Australia", kickoff:"Mar 24 Jun · 21:00 CDT",city:"Kansas City"},
+  // ── GRUPO E ──
+  {id:"E1",group:"E",round:"Grupo E",home:"Germany",     away:"Curaçao",     kickoff:"Dom 15 Jun · 14:00 CDT",city:"Philadelphia"},
+  {id:"E2",group:"E",round:"Grupo E",home:"Ivory Coast", away:"Ecuador",     kickoff:"Dom 15 Jun · 17:00 CDT",city:"Miami"},
+  {id:"E3",group:"E",round:"Grupo E",home:"Germany",     away:"Ivory Coast", kickoff:"Sáb 21 Jun · 14:00 CDT",city:"Toronto"},
+  {id:"E4",group:"E",round:"Grupo E",home:"Ecuador",     away:"Curaçao",     kickoff:"Sáb 21 Jun · 18:00 CDT",city:"Kansas City"},
+  {id:"E5",group:"E",round:"Grupo E",home:"Ecuador",     away:"Germany",     kickoff:"Mié 25 Jun · 17:00 CDT",city:"Boston"},
+  {id:"E6",group:"E",round:"Grupo E",home:"Curaçao",     away:"Ivory Coast", kickoff:"Mié 25 Jun · 17:00 CDT",city:"Houston"},
+  // ── GRUPO F ──
+  {id:"F1",group:"F",round:"Grupo F",home:"Netherlands", away:"Japan",        kickoff:"Dom 15 Jun · 17:00 CDT",city:"Los Angeles"},
+  {id:"F2",group:"F",round:"Grupo F",home:"Sweden",      away:"Tunisia",      kickoff:"Dom 15 Jun · 21:00 CDT",city:"Miami"},
+  {id:"F3",group:"F",round:"Grupo F",home:"Netherlands", away:"Sweden",       kickoff:"Sáb 21 Jun · 14:00 CDT",city:"Houston"},
+  {id:"F4",group:"F",round:"Grupo F",home:"Tunisia",     away:"Japan",        kickoff:"Sáb 21 Jun · 20:00 CDT",city:"Monterrey"},
+  {id:"F5",group:"F",round:"Grupo F",home:"Japan",       away:"Sweden",       kickoff:"Mié 25 Jun · 18:00 CDT",city:"Seattle"},
+  {id:"F6",group:"F",round:"Grupo F",home:"Tunisia",     away:"Netherlands",  kickoff:"Mié 25 Jun · 18:00 CDT",city:"Philadelphia"},
+  // ── GRUPO G ──
+  {id:"G1",group:"G",round:"Grupo G",home:"Belgium",     away:"Egypt",        kickoff:"Dom 15 Jun · 18:00 CDT",city:"Seattle"},
+  {id:"G2",group:"G",round:"Grupo G",home:"Iran",        away:"New Zealand",  kickoff:"Dom 15 Jun · 21:00 CDT",city:"Los Angeles"},
+  {id:"G3",group:"G",round:"Grupo G",home:"Belgium",     away:"Iran",         kickoff:"Dom 22 Jun · 14:00 CDT",city:"Los Angeles"},
+  {id:"G4",group:"G",round:"Grupo G",home:"New Zealand", away:"Egypt",        kickoff:"Dom 22 Jun · 18:00 CDT",city:"Miami"},
+  {id:"G5",group:"G",round:"Grupo G",home:"New Zealand", away:"Belgium",      kickoff:"Mié 25 Jun · 21:00 CDT",city:"San Francisco"},
+  {id:"G6",group:"G",round:"Grupo G",home:"Egypt",       away:"Iran",         kickoff:"Mié 25 Jun · 21:00 CDT",city:"Dallas"},
+  // ── GRUPO H ──
+  {id:"H1",group:"H",round:"Grupo H",home:"Spain",        away:"Cape Verde",   kickoff:"Lun 16 Jun · 14:00 CDT",city:"Atlanta"},
+  {id:"H2",group:"H",round:"Grupo H",home:"Saudi Arabia", away:"Uruguay",      kickoff:"Lun 16 Jun · 14:00 CDT",city:"Miami"},
+  {id:"H3",group:"H",round:"Grupo H",home:"Spain",        away:"Saudi Arabia", kickoff:"Dom 22 Jun · 14:00 CDT",city:"Atlanta"},
+  {id:"H4",group:"H",round:"Grupo H",home:"Uruguay",      away:"Cape Verde",   kickoff:"Dom 22 Jun · 18:00 CDT",city:"Los Angeles"},
+  {id:"H5",group:"H",round:"Grupo H",home:"Uruguay",      away:"Spain",        kickoff:"Jue 26 Jun · 17:00 CDT",city:"Kansas City"},
+  {id:"H6",group:"H",round:"Grupo H",home:"Cape Verde",   away:"Saudi Arabia", kickoff:"Jue 26 Jun · 17:00 CDT",city:"Seattle"},
+  // ── GRUPO I ──
+  {id:"I1",group:"I",round:"Grupo I",home:"France",   away:"Senegal",  kickoff:"Mar 17 Jun · 14:00 CDT",city:"New York/NJ"},
+  {id:"I2",group:"I",round:"Grupo I",home:"Iraq",     away:"Norway",   kickoff:"Mar 17 Jun · 17:00 CDT",city:"Kansas City"},
+  {id:"I3",group:"I",round:"Grupo I",home:"France",   away:"Iraq",     kickoff:"Lun 23 Jun · 17:00 CDT",city:"Seattle"},
+  {id:"I4",group:"I",round:"Grupo I",home:"Norway",   away:"Senegal",  kickoff:"Lun 23 Jun · 17:00 CDT",city:"Atlanta"},
+  {id:"I5",group:"I",round:"Grupo I",home:"Norway",   away:"France",   kickoff:"Jue 26 Jun · 18:00 CDT",city:"San Francisco"},
+  {id:"I6",group:"I",round:"Grupo I",home:"Senegal",  away:"Iraq",     kickoff:"Jue 26 Jun · 18:00 CDT",city:"Houston"},
+  // ── GRUPO J ──
+  {id:"J1",group:"J",round:"Grupo J",home:"Argentina", away:"Algeria",   kickoff:"Mar 17 Jun · 21:00 CDT",city:"Kansas City"},
+  {id:"J2",group:"J",round:"Grupo J",home:"Austria",   away:"Jordan",    kickoff:"Mar 17 Jun · 21:00 CDT",city:"San Francisco"},
+  {id:"J3",group:"J",round:"Grupo J",home:"Argentina", away:"Austria",   kickoff:"Lun 23 Jun · 14:00 CDT",city:"Dallas"},
+  {id:"J4",group:"J",round:"Grupo J",home:"Jordan",    away:"Algeria",   kickoff:"Lun 23 Jun · 18:00 CDT",city:"Houston"},
+  {id:"J5",group:"J",round:"Grupo J",home:"Jordan",    away:"Argentina", kickoff:"Jue 26 Jun · 21:00 CDT",city:"Miami"},
+  {id:"J6",group:"J",round:"Grupo J",home:"Algeria",   away:"Austria",   kickoff:"Jue 26 Jun · 21:00 CDT",city:"Boston"},
+  // ── GRUPO K ──
+  {id:"K1",group:"K",round:"Grupo K",home:"Portugal",   away:"DR Congo",   kickoff:"Mié 18 Jun · 14:00 CDT",city:"Houston"},
+  {id:"K2",group:"K",round:"Grupo K",home:"Uzbekistan", away:"Colombia",   kickoff:"Mié 18 Jun · 17:00 CDT",city:"Mexico City"},
+  {id:"K3",group:"K",round:"Grupo K",home:"Portugal",   away:"Uzbekistan", kickoff:"Mar 24 Jun · 14:00 CDT",city:"Kansas City"},
+  {id:"K4",group:"K",round:"Grupo K",home:"Colombia",   away:"DR Congo",   kickoff:"Mar 24 Jun · 18:00 CDT",city:"Philadelphia"},
+  {id:"K5",group:"K",round:"Grupo K",home:"Colombia",   away:"Portugal",   kickoff:"Vie 27 Jun · 17:00 CDT",city:"Boston"},
+  {id:"K6",group:"K",round:"Grupo K",home:"DR Congo",   away:"Uzbekistan", kickoff:"Vie 27 Jun · 17:00 CDT",city:"Atlanta"},
+  // ── GRUPO L ──
+  {id:"L1",group:"L",round:"Grupo L",home:"England",  away:"Croatia",  kickoff:"Mié 18 Jun · 15:00 CDT",city:"Dallas"},
+  {id:"L2",group:"L",round:"Grupo L",home:"Ghana",    away:"Panama",   kickoff:"Mar 17 Jun · 19:00 CDT",city:"Toronto"},
+  {id:"L3",group:"L",round:"Grupo L",home:"England",  away:"Ghana",    kickoff:"Mar 24 Jun · 15:00 CDT",city:"Atlanta"},
+  {id:"L4",group:"L",round:"Grupo L",home:"Panama",   away:"Croatia",  kickoff:"Mar 24 Jun · 15:00 CDT",city:"New York/NJ"},
+  {id:"L5",group:"L",round:"Grupo L",home:"Panama",   away:"England",  kickoff:"Vie 27 Jun · 17:00 CDT",city:"Miami"},
+  {id:"L6",group:"L",round:"Grupo L",home:"Croatia",  away:"Ghana",    kickoff:"Vie 27 Jun · 17:00 CDT",city:"Philadelphia"},
+  // ── ELIMINATORIAS ──
+  {id:"R32a",round:"Ronda de 32",   home:"TBD",away:"TBD"},
+  {id:"R32b",round:"Ronda de 32",   home:"TBD",away:"TBD"},
+  {id:"R32c",round:"Ronda de 32",   home:"TBD",away:"TBD"},
+  {id:"R32d",round:"Ronda de 32",   home:"TBD",away:"TBD"},
+  {id:"R32e",round:"Ronda de 32",   home:"TBD",away:"TBD"},
+  {id:"R32f",round:"Ronda de 32",   home:"TBD",away:"TBD"},
+  {id:"R32g",round:"Ronda de 32",   home:"TBD",away:"TBD"},
+  {id:"R32h",round:"Ronda de 32",   home:"TBD",away:"TBD"},
+  {id:"QFa", round:"Cuartos de Final",home:"TBD",away:"TBD"},
+  {id:"QFb", round:"Cuartos de Final",home:"TBD",away:"TBD"},
+  {id:"QFc", round:"Cuartos de Final",home:"TBD",away:"TBD"},
+  {id:"QFd", round:"Cuartos de Final",home:"TBD",away:"TBD"},
+  {id:"SF1", round:"Semifinal",     home:"TBD",away:"TBD"},
+  {id:"SF2", round:"Semifinal",     home:"TBD",away:"TBD"},
+  {id:"FIN", round:"Final",         home:"TBD",away:"TBD"}
 ];
 
 var ROUND_PTS = {"Ronda de 32":8,"Cuartos de Final":12,"Semifinal":18,"Final":25};
@@ -744,42 +757,42 @@ function setBanner(type,msg) {
 // kickoffISO is UTC. CET = UTC+2 in summer (CEST).
 // All times stored as UTC so locking is timezone-independent.
 var KICKOFF_UTC = {
-  "A1":"2026-06-11T19:00:00Z","A2":"2026-06-11T20:00:00Z",
-  "A3":"2026-06-18T16:00:00Z","A4":"2026-06-18T23:00:00Z",
+  "A1":"2026-06-11T19:00:00Z","A2":"2026-06-11T22:00:00Z",
+  "A3":"2026-06-18T16:00:00Z","A4":"2026-06-18T19:00:00Z",
   "A5":"2026-06-24T23:00:00Z","A6":"2026-06-24T23:00:00Z",
-  "B1":"2026-06-12T19:00:00Z","B2":"2026-06-13T19:00:00Z",
-  "B3":"2026-06-18T19:00:00Z","B4":"2026-06-17T22:00:00Z",
+  "B1":"2026-06-12T23:00:00Z","B2":"2026-06-13T23:00:00Z",
+  "B3":"2026-06-18T22:00:00Z","B4":"2026-06-18T22:00:00Z",
   "B5":"2026-06-24T19:00:00Z","B6":"2026-06-24T19:00:00Z",
-  "C1":"2026-06-12T22:00:00Z","C2":"2026-06-13T01:00:00Z",
-  "C3":"2026-06-18T22:00:00Z","C4":"2026-06-19T01:00:00Z",
-  "C5":"2026-06-24T22:00:00Z","C6":"2026-06-24T22:00:00Z",
-  "D1":"2026-06-12T01:00:00Z","D2":"2026-06-13T04:00:00Z",
-  "D3":"2026-06-19T19:00:00Z","D4":"2026-06-19T04:00:00Z",
+  "C1":"2026-06-12T22:00:00Z","C2":"2026-06-13T02:00:00Z",
+  "C3":"2026-06-18T23:00:00Z","C4":"2026-06-18T23:00:00Z",
+  "C5":"2026-06-24T23:00:00Z","C6":"2026-06-24T23:00:00Z",
+  "D1":"2026-06-12T22:00:00Z","D2":"2026-06-13T03:00:00Z",
+  "D3":"2026-06-19T19:00:00Z","D4":"2026-06-20T03:00:00Z",
   "D5":"2026-06-25T02:00:00Z","D6":"2026-06-25T02:00:00Z",
-  "E1":"2026-06-14T17:00:00Z","E2":"2026-06-13T23:00:00Z",
-  "E3":"2026-06-20T20:00:00Z","E4":"2026-06-20T00:00:00Z",
-  "E5":"2026-06-25T20:00:00Z","E6":"2026-06-25T20:00:00Z",
-  "F1":"2026-06-14T20:00:00Z","F2":"2026-06-14T02:00:00Z",
-  "F3":"2026-06-20T17:00:00Z","F4":"2026-06-20T04:00:00Z",
-  "F5":"2026-06-24T23:00:00Z","F6":"2026-06-24T23:00:00Z",
-  "G1":"2026-06-15T19:00:00Z","G2":"2026-06-15T01:00:00Z",
-  "G3":"2026-06-21T19:00:00Z","G4":"2026-06-21T01:00:00Z",
-  "G5":"2026-06-26T03:00:00Z","G6":"2026-06-26T03:00:00Z",
-  "H1":"2026-06-15T16:00:00Z","H2":"2026-06-14T22:00:00Z",
-  "H3":"2026-06-21T16:00:00Z","H4":"2026-06-21T00:00:00Z",
-  "H5":"2026-06-26T00:00:00Z","H6":"2026-06-26T00:00:00Z",
-  "I1":"2026-06-16T19:00:00Z","I2":"2026-06-15T22:00:00Z",
-  "I3":"2026-06-22T21:00:00Z","I4":"2026-06-22T00:00:00Z",
-  "I5":"2026-06-26T19:00:00Z","I6":"2026-06-26T19:00:00Z",
-  "J1":"2026-06-16T01:00:00Z","J2":"2026-06-17T04:00:00Z",
-  "J3":"2026-06-22T17:00:00Z","J4":"2026-06-22T03:00:00Z",
+  "E1":"2026-06-15T19:00:00Z","E2":"2026-06-15T22:00:00Z",
+  "E3":"2026-06-21T19:00:00Z","E4":"2026-06-21T23:00:00Z",
+  "E5":"2026-06-25T22:00:00Z","E6":"2026-06-25T22:00:00Z",
+  "F1":"2026-06-15T22:00:00Z","F2":"2026-06-16T02:00:00Z",
+  "F3":"2026-06-21T19:00:00Z","F4":"2026-06-22T01:00:00Z",
+  "F5":"2026-06-25T23:00:00Z","F6":"2026-06-25T23:00:00Z",
+  "G1":"2026-06-15T23:00:00Z","G2":"2026-06-16T02:00:00Z",
+  "G3":"2026-06-22T19:00:00Z","G4":"2026-06-22T23:00:00Z",
+  "G5":"2026-06-26T02:00:00Z","G6":"2026-06-26T02:00:00Z",
+  "H1":"2026-06-16T19:00:00Z","H2":"2026-06-16T19:00:00Z",
+  "H3":"2026-06-22T19:00:00Z","H4":"2026-06-22T23:00:00Z",
+  "H5":"2026-06-26T22:00:00Z","H6":"2026-06-26T22:00:00Z",
+  "I1":"2026-06-17T19:00:00Z","I2":"2026-06-17T22:00:00Z",
+  "I3":"2026-06-23T22:00:00Z","I4":"2026-06-23T22:00:00Z",
+  "I5":"2026-06-26T23:00:00Z","I6":"2026-06-26T23:00:00Z",
+  "J1":"2026-06-18T02:00:00Z","J2":"2026-06-18T02:00:00Z",
+  "J3":"2026-06-23T19:00:00Z","J4":"2026-06-23T23:00:00Z",
   "J5":"2026-06-27T02:00:00Z","J6":"2026-06-27T02:00:00Z",
-  "K1":"2026-06-17T17:00:00Z","K2":"2026-06-17T02:00:00Z",
-  "K3":"2026-06-23T17:00:00Z","K4":"2026-06-23T02:00:00Z",
-  "K5":"2026-06-27T23:30:00Z","K6":"2026-06-27T23:30:00Z",
-  "L1":"2026-06-17T20:00:00Z","L2":"2026-06-16T23:00:00Z",
-  "L3":"2026-06-23T20:00:00Z","L4":"2026-06-22T23:00:00Z",
-  "L5":"2026-06-27T21:00:00Z","L6":"2026-06-27T21:00:00Z"
+  "K1":"2026-06-18T19:00:00Z","K2":"2026-06-18T22:00:00Z",
+  "K3":"2026-06-24T19:00:00Z","K4":"2026-06-24T23:00:00Z",
+  "K5":"2026-06-27T22:00:00Z","K6":"2026-06-27T22:00:00Z",
+  "L1":"2026-06-18T20:00:00Z","L2":"2026-06-18T00:00:00Z",
+  "L3":"2026-06-24T20:00:00Z","L4":"2026-06-24T20:00:00Z",
+  "L5":"2026-06-27T22:00:00Z","L6":"2026-06-27T22:00:00Z"
 };
 
 function isLocked(matchId) {
@@ -1182,7 +1195,9 @@ function saveResults() {
   var results={};
   MATCHES.forEach(function(m){
     var rh=document.getElementById('rh-'+m.id), ra=document.getElementById('ra-'+m.id), rw=document.getElementById('rw-'+m.id), rm=document.getElementById('rm-'+m.id);
-    results[m.id]={home:rh?rh.value:'',away:ra?ra.value:'',winner:rw?rw.value:'',method:rm?rm.value:''};
+    var homeVal = (rh && rh.value !== '') ? rh.value : (rw && rw.value ? '0' : '');
+    var awayVal = (ra && ra.value !== '') ? ra.value : (rw && rw.value ? '0' : '');
+    results[m.id]={home:homeVal, away:awayVal, winner:rw?rw.value:'', method:rm?rm.value:''};
   });
   setLocal('wc_results_local',results);
   var btn=document.getElementById('results-btn');
@@ -1237,18 +1252,18 @@ function generateWhatsapp() {
     return {name: p.name||'?', total: s.total, detail: s.detail};
   }).sort(function(a,b){return b.total - a.total;});
 
-  // Build leaderboard lines with daily delta and match detail
+  // Build leaderboard lines — top 10 only
   var medals = ['🥇','🥈','🥉'];
   var lbLines = '';
+  var totalPlayers = scored.length;
   scored.forEach(function(p, i) {
+    if(i >= 10) return;
     var prev = prevScores[p.name] !== undefined ? prevScores[p.name] : 0;
     var todayPts = p.total - prev;
     var deltaStr = todayPts > 0 ? ' (+'+todayPts+' hoy)' : ' (+0 hoy)';
     var medal = medals[i] || (i+1)+'.';
     lbLines += medal+' '+p.name+' — '+p.total+' pts'+deltaStr+'\n';
 
-    // Per-match detail — only show items earned today (pts > 0 and not in prev snapshot)
-    // We show all detail items concisely on one indented line
     if(p.detail && p.detail.length > 0) {
       var detailStr = p.detail.map(function(d){ return d.note+' +'+d.pts; }).join(' · ');
       lbLines += '   '+detailStr+'\n';
@@ -1257,6 +1272,9 @@ function generateWhatsapp() {
     }
     lbLines += '\n';
   });
+  if(totalPlayers > 10) {
+    lbLines += '··· '+totalPlayers+' participantes en total · Clasificación completa en la app\n';
+  }
 
   // Save current scores as snapshot for next day's delta
   var snapshot = {};
@@ -1275,19 +1293,45 @@ function generateWhatsapp() {
   var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   var dateStr = today.getDate()+' '+months[today.getMonth()]+' '+today.getFullYear();
 
-  // Build next 24 hours fixtures using KICKOFF_UTC
+  // Build next 24 hours fixtures and picks summary
   var now = new Date();
   var in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   var upcomingLines = '';
+  var picksLines = '';
+
   MATCHES.forEach(function(m) {
     if(!m.kickoff || !m.city || !KICKOFF_UTC[m.id]) return;
     var ko = new Date(KICKOFF_UTC[m.id]);
-    if(ko > now && ko <= in24h) {
-      var ht = td(m.home), at = td(m.away);
-      // Extract just time and timezone from kickoff string e.g. "Thu 11 Jun · 20:00 BST"
-      var timePart = m.kickoff.split('·')[1] ? m.kickoff.split('·')[1].trim() : m.kickoff;
-      upcomingLines += ht.flag+' '+ht.name+' vs '+at.name+' '+at.flag+' · '+timePart+' · '+m.city+'\n';
-    }
+    if(ko <= now || ko > in24h) return;
+
+    var ht = td(m.home), at = td(m.away);
+    var timePart = m.kickoff.split('·')[1] ? m.kickoff.split('·')[1].trim() : m.kickoff;
+    upcomingLines += ht.flag+' '+ht.name+' vs '+at.name+' '+at.flag+' · '+timePart+' · '+m.city+'\n';
+
+    // Tally picks for this match across all players
+    var homeNames = [], drawNames = [], awayNames = [], noPick = [];
+    Object.values(allPicks).forEach(function(p) {
+      var pick = p.matches && p.matches[m.id];
+      var playerName = p.name || '?';
+      if(!pick || !pick.winner) {
+        noPick.push(playerName);
+      } else if(pick.winner === m.home) {
+        homeNames.push(playerName);
+      } else if(pick.winner === 'Draw') {
+        drawNames.push(playerName);
+      } else if(pick.winner === m.away) {
+        awayNames.push(playerName);
+      } else {
+        noPick.push(playerName);
+      }
+    });
+
+    picksLines += ht.flag+' '+ht.name+' vs '+at.name+' '+at.flag+'\n';
+    if(homeNames.length)  picksLines += ht.flag+' '+ht.name+' × '+homeNames.length+' → '+homeNames.join(', ')+'\n';
+    if(drawNames.length)  picksLines += '🤝 Empate × '+drawNames.length+' → '+drawNames.join(', ')+'\n';
+    if(awayNames.length)  picksLines += at.flag+' '+at.name+' × '+awayNames.length+' → '+awayNames.join(', ')+'\n';
+    if(noPick.length)     picksLines += '❓ Sin pronóstico → '+noPick.join(', ')+'\n';
+    picksLines += '\n';
   });
 
   var msg =
@@ -1299,7 +1343,8 @@ function generateWhatsapp() {
     lbLines+
     (gapLine ? '📊 '+gapLine+'\n' : '')+
     (upcomingLines ? '\n📅 Próximos partidos — próximas 24 horas\n'+upcomingLines : '')+
-    '\nTu instinto natural · Vencer a tu rival\n'+
+    (picksLines ? '\n🔮 Pronósticos para mañana\n'+picksLines : '')+
+    'Tu instinto natural · Vencer a tu rival\n'+
     'Tienes que pelear por una estrella 🏆';
 
   // Show preview
