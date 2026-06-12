@@ -257,7 +257,7 @@ function sendDailyRecap() {
 function simpleScore(picks, results) {
   var total=0, gids=["A1","A2","A3","A4","A5","A6","B1","B2","B3","B4","B5","B6","C1","C2","C3","C4","C5","C6","D1","D2","D3","D4","D5","D6","E1","E2","E3","E4","E5","E6","F1","F2","F3","F4","F5","F6","G1","G2","G3","G4","G5","G6","H1","H2","H3","H4","H5","H6","I1","I2","I3","I4","I5","I6","J1","J2","J3","J4","J5","J6","K1","K2","K3","K4","K5","K6","L1","L2","L3","L4","L5","L6"];
   var kpts={R32a:5,R32b:5,R32c:5,R32d:5,R32e:5,R32f:5,R32g:5,R32h:5,QFa:8,QFb:8,QFc:8,QFd:8,SF1:12,SF2:12,FIN:20};
-  gids.forEach(function(id){var r=results[id],p=picks.matches&&picks.matches[id];if(!r||!r.winner||!p||!p.winner)return;if(p.winner===r.winner){total+=2;if(p.home!==''&&p.away!==''&&String(p.home)===String(r.home)&&String(p.away)===String(r.away))total+=3;}});
+  gids.forEach(function(id){var r=results[id],p=picks.matches&&picks.matches[id];if(!r||!r.winner||!p||!p.winner)return;if(p.winner===r.winner){total+=2;if(String(p.home||'0')===String(r.home||'0')&&String(p.away||'0')===String(r.away||'0'))total+=3;}});
   for(var id in kpts){var r=results[id],p=picks.matches&&picks.matches[id];if(r&&r.winner&&p&&p.winner===r.winner)total+=kpts[id];}
   return total;
 }</pre>
@@ -904,7 +904,7 @@ function renderMatchCards(picks, results) {
       var matchPts = 0, notes = [];
       if(p.winner === r.winner) {
         matchPts += 2; notes.push('✅ Resultado +2');
-        if(p.home!==''&&p.away!==''&&String(p.home)===String(r.home)&&String(p.away)===String(r.away)){
+        if(String(p.home||'0')===String(r.home||'0')&&String(p.away||'0')===String(r.away||'0')){
           matchPts += 3; notes.push('🎯 Exacto +3');
         }
       } else {
@@ -1415,7 +1415,7 @@ function calcScore(picks, results) {
     if(!r||!r.winner||!p||!p.winner) return;
     if(p.winner===r.winner){
       total+=2; detail.push({pts:2,note:'✅ '+m.id});
-      if(p.home!==''&&p.away!==''&&String(p.home)===String(r.home)&&String(p.away)===String(r.away)){total+=3;detail.push({pts:3,note:'🎯 '+m.id+' exacto'});}
+      if(String(p.home||'0')===String(r.home||'0')&&String(p.away||'0')===String(r.away||'0')){total+=3;detail.push({pts:3,note:'🎯 '+m.id+' exacto'});}
     }
   });
   Object.keys(GROUPS).forEach(function(g){
