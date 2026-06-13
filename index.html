@@ -1343,12 +1343,19 @@ function generateWhatsapp() {
 }
 
 function buildWhatsappMessage(day, results, allPicks) {
-  // Build today's results lines — only matches with results entered
+  var now = new Date();
+  var last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  var in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  // Build today's results — only matches that kicked off in the last 24 hours
   var resultLines = '';
   var matchCount = 0;
   MATCHES.forEach(function(m) {
     var r = results[m.id];
     if(!r || !r.winner) return;
+    // Only include if match kicked off in the last 24h
+    var ko = KICKOFF_UTC[m.id] ? new Date(KICKOFF_UTC[m.id]) : null;
+    if(ko && (ko < last24h || ko > now)) return;
     var ht = td(m.home), at = td(m.away);
     var score = (r.home!==''&&r.away!=='') ? r.home+' – '+r.away : '– –';
     resultLines += ht.flag+' '+ht.name+' '+score+' '+at.name+' '+at.flag+'\n';
@@ -1358,7 +1365,7 @@ function buildWhatsappMessage(day, results, allPicks) {
   if(matchCount === 0) {
     var errEl = document.getElementById('wa-error');
     errEl.style.display='block';
-    errEl.textContent='❌ No hay resultados guardados. Introduce los resultados primero.';
+    errEl.textContent='❌ No hay resultados de hoy. Introduce los resultados del día primero.';
     setTimeout(function(){errEl.style.display='none';},4000);
     return;
   }
@@ -1414,8 +1421,6 @@ function buildWhatsappMessage(day, results, allPicks) {
   var dateStr = today.getDate()+' '+months[today.getMonth()]+' '+today.getFullYear();
 
   // Build next 24 hours fixtures and picks summary
-  var now = new Date();
-  var in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   var upcomingLines = '';
   var picksLines = '';
 
@@ -1425,6 +1430,7 @@ function buildWhatsappMessage(day, results, allPicks) {
     if(ko <= now || ko > in24h) return;
 
     var ht = td(m.home), at = td(m.away);
+    // Use the full kickoff string but strip the day/date part — keep time + CDT + city
     var timePart = m.kickoff.split('·')[1] ? m.kickoff.split('·')[1].trim() : m.kickoff;
     upcomingLines += ht.flag+' '+ht.name+' vs '+at.name+' '+at.flag+' · '+timePart+' · '+m.city+'\n';
 
