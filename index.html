@@ -636,7 +636,15 @@ function showTab(id) {
   if(sec) sec.classList.add('active');
   if(tab) tab.classList.add('active');
   if(id==='leaderboard') loadAndRenderLeaderboard();
-  if(id==='admin') renderAdminMatches();
+  if(id==='admin') {
+    sheetGet('getSchedule').then(function(ss) {
+      if(ss && ss.schedule) {
+        applySchedule(ss.schedule);
+        setLocal('wc_schedule_cache', ss.schedule);
+      }
+      renderAdminMatches();
+    });
+  }
   if(id==='enter') {
     var w = document.getElementById('no-url-warn');
     if(w) w.style.display = 'none';
@@ -656,8 +664,13 @@ function showTab(id) {
     if(savedPick.champion) {
       lockChampionPick(savedPick.champion);
     }
-    Promise.all([sheetGet('getResults')]).then(function(vals) {
-      var sr = vals[0];
+    // Fetch fresh schedule AND results together before rendering
+    Promise.all([sheetGet('getSchedule'), sheetGet('getResults')]).then(function(vals) {
+      var ss = vals[0], sr = vals[1];
+      if(ss && ss.schedule) {
+        applySchedule(ss.schedule);
+        setLocal('wc_schedule_cache', ss.schedule);
+      }
       var results = (sr && sr.results) ? sr.results : getLocal('wc_results_local');
       renderMatchCards(savedPick, results);
     });
