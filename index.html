@@ -1227,12 +1227,23 @@ function renderAdminMatches() {
 
   matchList.forEach(function(m){
     // Section header
-    var sectionKey = view === 'chrono'
-      ? (KICKOFF_UTC[m.id] ? new Date(KICKOFF_UTC[m.id]).toDateString() : m.round)
-      : m.round;
-    var sectionLabel = view === 'chrono'
-      ? (m.kickoff ? m.kickoff.split('·')[0].trim() : m.round)
-      : m.round;
+    var sectionKey, sectionLabel;
+    if(view === 'chrono') {
+      if(KICKOFF_UTC[m.id]) {
+        var cdtMs = new Date(KICKOFF_UTC[m.id]).getTime() - 5 * 60 * 60 * 1000;
+        var cdtDate = new Date(cdtMs);
+        var days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+        var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+        sectionLabel = days[cdtDate.getUTCDay()]+' '+cdtDate.getUTCDate()+' '+months[cdtDate.getUTCMonth()];
+        sectionKey = sectionLabel;
+      } else {
+        sectionKey = m.round;
+        sectionLabel = m.round;
+      }
+    } else {
+      sectionKey = m.round;
+      sectionLabel = m.round;
+    }
 
     if(sectionKey !== curRound) {
       curRound = sectionKey;
