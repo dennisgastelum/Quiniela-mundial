@@ -501,8 +501,8 @@ var MATCHES = [
   {id:"B5",group:"B",round:"Grupo B",home:"Switzerland",away:"Canada",kickoff:"Mié 24 Jun · 14:00 CDT",city:"Kansas City"},
   {id:"B6",group:"B",round:"Grupo B",home:"Bosnia and Herzegovina",away:"Qatar",kickoff:"Mié 24 Jun · 14:00 CDT",city:"Seattle"},
   // ── GRUPO C ──
-  {id:"C1",group:"C",round:"Grupo C",home:"Brazil",away:"Morocco",kickoff:"Vie 12 Jun · 17:00 CDT",city:"New York/NJ"},
-  {id:"C2",group:"C",round:"Grupo C",home:"Haiti",away:"Scotland",kickoff:"Vie 12 Jun · 23:00 CDT",city:"Los Angeles"},
+  {id:"C1",group:"C",round:"Grupo C",home:"Brazil",away:"Morocco",kickoff:"Sáb 13 Jun · 17:00 CDT",city:"New York/NJ"},
+  {id:"C2",group:"C",round:"Grupo C",home:"Haiti",away:"Scotland",kickoff:"Sáb 13 Jun · 23:00 CDT",city:"Los Angeles"},
   {id:"C3",group:"C",round:"Grupo C",home:"Scotland",away:"Morocco",kickoff:"Jue 18 Jun · 17:00 CDT",city:"Boston"},
   {id:"C4",group:"C",round:"Grupo C",home:"Brazil",away:"Haiti",kickoff:"Jue 18 Jun · 20:00 CDT",city:"New York/NJ"},
   {id:"C5",group:"C",round:"Grupo C",home:"Scotland",away:"Brazil",kickoff:"Mié 24 Jun · 17:00 CDT",city:"Miami"},
@@ -664,6 +664,36 @@ function showTab(id) {
   }
 }
 
+// ════════ SCHEDULE (from sheet, with hardcoded fallback) ════════
+function applySchedule(schedule) {
+  if(!schedule) return;
+  MATCHES.forEach(function(m) {
+    var s = schedule[m.id];
+    if(!s) return;
+    if(s.kickoff) m.kickoff = s.kickoff;
+    if(s.city) m.city = s.city;
+    if(s.utc) KICKOFF_UTC[m.id] = s.utc;
+  });
+}
+
+function loadSchedule(callback) {
+  sheetGet('getSchedule').then(function(res) {
+    if(res && res.schedule) {
+      applySchedule(res.schedule);
+      setLocal('wc_schedule_cache', res.schedule);
+    } else {
+      // Fall back to cached schedule if sheet unavailable
+      var cached = getLocal('wc_schedule_cache');
+      if(cached && Object.keys(cached).length) applySchedule(cached);
+    }
+    if(callback) callback();
+  }).catch(function() {
+    var cached = getLocal('wc_schedule_cache');
+    if(cached && Object.keys(cached).length) applySchedule(cached);
+    if(callback) callback();
+  });
+}
+
 // ════════ INIT ════════
 function wire(id, event, fn) {
   var el = document.getElementById(id);
@@ -690,37 +720,37 @@ function init() {
   wire('wa-btn',              'click', generateWhatsapp);
   wire('sheet-url',           'input', clearUrlStatus);
 
-  // Populate team dropdowns sorted by rank
-  var teamKeys = Object.keys(TEAM_DATA).filter(function(k){
-    return k !== 'TBD';
-  }).sort(function(a,b){
-    var ra = TEAM_DATA[a].rank||999, rb = TEAM_DATA[b].rank||999;
-    return ra-rb;
-  });
-
+  // Populate team dropdowns
+  var teamKeys = Object.keys(TEAM_DATA).filter(function(k){ return k !== 'TBD'; })
+    .sort(function(a,b){ return (TEAM_DATA[a].rank||999)-(TEAM_DATA[b].rank||999); });
   ['champion-pick','actual-champion'].forEach(function(id) {
-    var sel = document.getElementById(id);
+    var sel = document.getElementById(id); if(!sel) return;
     teamKeys.forEach(function(k) {
-      var t = TEAM_DATA[k];
-      var o = document.createElement('option');
-      o.value = k;
-      o.textContent = t.flag+' '+t.name+(t.rank?' (#'+t.rank+')':'');
+      var t = TEAM_DATA[k], o = document.createElement('option');
+      o.value = k; o.textContent = t.flag+' '+t.name+(t.rank?' (#'+t.rank+')':'');
       sel.appendChild(o);
     });
   });
 
-  // Restore saved values
+  // Restore saved URL and banner
   var savedUrl = localStorage.getItem('wc_sheet_url') || HARDCODED_SHEET_URL;
-  document.getElementById('sheet-url').value = savedUrl;
+  var urlInput = document.getElementById('sheet-url');
+  if(urlInput) urlInput.value = savedUrl;
   localStorage.setItem('wc_sheet_url', savedUrl);
   setBanner('ok','🟢 Google Sheets conectado');
+
   var savedChamp = localStorage.getItem('wc_champion');
-  if(savedChamp) document.getElementById('actual-champion').value = savedChamp;
+  if(savedChamp) { var ac = document.getElementById('actual-champion'); if(ac) ac.value = savedChamp; }
 
   initToggles();
-  renderMatchCards({}, getLocal('wc_results_local'));
-  renderAdminMatches();
+
+  // Fetch schedule from sheet first, then render
+  loadSchedule(function() {
+    renderMatchCards({}, getLocal('wc_results_local'));
+    renderAdminMatches();
+  });
 }
+
 
 // ════════ SETUP ════════
 function clearUrlStatus() {
@@ -769,7 +799,7 @@ var KICKOFF_UTC = {
   "B1":"2026-06-12T23:00:00Z","B2":"2026-06-13T22:00:00Z",
   "B3":"2026-06-18T22:00:00Z","B4":"2026-06-18T22:00:00Z",
   "B5":"2026-06-24T19:00:00Z","B6":"2026-06-24T19:00:00Z",
-  "C1":"2026-06-12T22:00:00Z","C2":"2026-06-13T04:00:00Z",
+  "C1":"2026-06-13T22:00:00Z","C2":"2026-06-14T04:00:00Z",
   "C3":"2026-06-18T22:00:00Z","C4":"2026-06-19T01:00:00Z",
   "C5":"2026-06-24T22:00:00Z","C6":"2026-06-24T22:00:00Z",
   "D1":"2026-06-13T04:00:00Z","D2":"2026-06-14T04:00:00Z",
