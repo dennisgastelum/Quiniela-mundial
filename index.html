@@ -1373,10 +1373,25 @@ function buildWhatsappMessage(day, results, allPicks) {
   // Load previous snapshot to compute daily delta
   var prevScores = getLocal('wc_prev_scores'); // {name: totalPts}
 
+  // Build set of match IDs that kicked off in the last 24h (today's matches)
+  var todayMatchIds = {};
+  MATCHES.forEach(function(m) {
+    if(!KICKOFF_UTC[m.id]) return;
+    var ko = new Date(KICKOFF_UTC[m.id]);
+    if(ko >= last24h && ko <= now) todayMatchIds[m.id] = true;
+  });
+
   // Score everyone with full detail
   var scored = Object.values(allPicks).map(function(p) {
     var s = calcScore(p, results);
-    return {name: p.name||'?', total: s.total, detail: s.detail};
+    // Filter detail to only today's matches
+    var todayDetail = s.detail.filter(function(d) {
+      // Match detail notes contain match ID e.g. "✅ A1", "🎯 A1 exacto", "🔵 Brasil clasifica Grp A"
+      // Check if any of today's match IDs appear in the note
+      var matchId = d.note.split(' ')[1]; // e.g. "A1" from "✅ A1"
+      return todayMatchIds[matchId];
+    });
+    return {name: p.name||'?', total: s.total, detail: todayDetail};
   }).sort(function(a,b){return b.total - a.total;});
 
   // Build leaderboard lines — top 10 only
@@ -1430,8 +1445,12 @@ function buildWhatsappMessage(day, results, allPicks) {
     if(ko <= now || ko > in24h) return;
 
     var ht = td(m.home), at = td(m.away);
-    // Use the full kickoff string but strip the day/date part — keep time + CDT + city
-    var timePart = m.kickoff.split('·')[1] ? m.kickoff.split('·')[1].trim() : m.kickoff;
+    // Build CDT time directly from KICKOFF_UTC — guaranteed accurate
+    var cdtMs = ko.getTime() - 5 * 60 * 60 * 1000;
+    var cdtDate = new Date(cdtMs);
+    var cdtHour = String(cdtDate.getUTCHours()).padStart(2,'0');
+    var cdtMin = String(cdtDate.getUTCMinutes()).padStart(2,'0');
+    var timePart = cdtHour+':'+cdtMin+' CDT';
     upcomingLines += ht.flag+' '+ht.name+' vs '+at.name+' '+at.flag+' · '+timePart+' · '+m.city+'\n';
 
     // Tally picks for this match across all players
@@ -1545,29 +1564,87 @@ function calcScore(picks, results) {
 
 // ════════ LEADERBOARD ════════
 function loadAndRenderLeaderboard() {
-  var cont=document.getElementById('leaderboard-content');
-  var loading=document.getElementById('lb-loading');
-  loading.style.display='block'; cont.innerHTML='';
-  var allPicks=getLocal('wc_picks_local'), results=getLocal('wc_results_local');
-  Promise.all([sheetGet('getPicks'),sheetGet('getResults')]).then(function(vals){
-    var sp=vals[0], sr=vals[1];
-    if(sp&&sp.picks) allPicks=sp.picks;
-    if(sr&&sr.results) results=sr.results;
-    loading.style.display='none';
-    if(!Object.keys(allPicks).length){
-      cont.innerHTML='<p style="color:var(--muted);font-size:0.9rem;">Aún no hay pronósticos. ¡Comparte el enlace!</p>'; return;
+  var cont = document.getElementById('leaderboard-content');
+  var loading = document.getElementById('lb-loading');
+  loading.style.display = 'block';
+  cont.innerHTML = '';
+
+  var allPicks = getLocal('wc_picks_local');
+  var results = getLocal('wc_results_local');
+
+  Promise.all([sheetGet('getPicks'), sheetGet('getResults')]).then(function(vals) {
+    var sp = vals[0], sr = vals[1];
+    if(sp && sp.picks) allPicks = sp.picks;
+    if(sr && sr.results) results = sr.results;
+    loading.style.display = 'none';
+
+    if(!Object.keys(allPicks).length) {
+      cont.innerHTML = '<p style="color:var(--muted);font-size:0.9rem;">Aún no hay pronósticos. ¡Comparte el enlace!</p>';
+      return;
     }
-    var scored=Object.values(allPicks).map(function(p){
-      return Object.assign({name:p.name||'?'},calcScore(p,results));
-    }).sort(function(a,b){return b.total-a.total;});
-    var rc=['gold','silver','bronze'];
-    cont.innerHTML=scored.map(function(p,i){
-      return '<div class="lb-row">'+
-        '<div class="rank '+(rc[i]||'')+'>'+(i+1)+'</div>'+
-        '<div><div class="lb-name">'+p.name+'</div><div class="lb-detail">'+p.detail.length+' eventos puntuados</div></div>'+
-        '<div class="pts">'+p.total+'<span style="font-size:0.9rem;color:var(--muted);margin-left:4px;">pts</span></div>'+
-      '</div>';
-    }).join('');
+
+    var prevScores = getLocal('wc_prev_scores');
+    var scored = Object.values(allPicks).map(function(p) {
+      var s = calcScore(p, results);
+      var prev = prevScores[p.name||'?'] !== undefined ? prevScores[p.name||'?'] : null;
+      var todayPts = prev !== null ? s.total - prev : null;
+      return {name: p.name||'?', total: s.total, detail: s.detail, todayPts: todayPts};
+    }).sort(function(a,b){ return b.total - a.total; });
+
+    var maxPts = scored.length ? scored[0].total : 1;
+    var medals = ['🥇','🥈','🥉'];
+
+    // Build table
+    var html = '<div style="overflow-x:auto;">';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:0.88rem;">';
+    html += '<thead><tr style="border-bottom:2px solid var(--border);">';
+    html += '<th style="padding:8px 10px;text-align:left;font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;width:36px;">#</th>';
+    html += '<th style="padding:8px 10px;text-align:left;font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;">Jugador</th>';
+    html += '<th style="padding:8px 10px;text-align:right;font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;">Hoy</th>';
+    html += '<th style="padding:8px 10px;text-align:right;font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;">Total</th>';
+    html += '</tr></thead><tbody>';
+
+    scored.forEach(function(p, i) {
+      var isTop3 = i < 3;
+      var rowBg = i === 0 ? 'rgba(255,214,0,0.05)' : (i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent');
+      var todayStr = p.todayPts !== null
+        ? (p.todayPts > 0 ? '<span style="color:var(--green);font-weight:700;">+'+p.todayPts+'</span>' : '<span style="color:var(--muted);">+0</span>')
+        : '<span style="color:var(--muted);">—</span>';
+
+      // Progress bar width
+      var barPct = maxPts > 0 ? Math.round((p.total / maxPts) * 100) : 0;
+      var barColor = i === 0 ? 'var(--gold)' : (i === 1 ? '#c0c0c0' : (i === 2 ? '#cd7f32' : 'var(--green)'));
+
+      html += '<tr style="background:'+rowBg+';border-bottom:0.5px solid var(--border);">';
+
+      // Rank
+      html += '<td style="padding:12px 10px;text-align:center;font-family:\'Bebas Neue\',sans-serif;font-size:1.1rem;color:'+(isTop3?barColor:'var(--muted)')+';">'+(medals[i]||(i+1))+'</td>';
+
+      // Name + progress bar
+      html += '<td style="padding:12px 10px;">';
+      html += '<div style="font-weight:600;margin-bottom:4px;">'+p.name+'</div>';
+      html += '<div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.07);overflow:hidden;">';
+      html += '<div style="height:100%;width:'+barPct+'%;background:'+barColor+';border-radius:2px;transition:width 0.4s ease;"></div>';
+      html += '</div></td>';
+
+      // Today pts
+      html += '<td style="padding:12px 10px;text-align:right;white-space:nowrap;">'+todayStr+'</td>';
+
+      // Total pts
+      html += '<td style="padding:12px 10px;text-align:right;white-space:nowrap;"><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;color:'+(i===0?'var(--gold)':'var(--green)')+';">'+p.total+'</span><span style="font-size:0.8rem;color:var(--muted);margin-left:3px;">pts</span></td>';
+
+      html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+
+    // Last updated note
+    var now = new Date();
+    var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    var timeStr = now.getDate()+' '+months[now.getMonth()]+' · '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    html += '<p style="color:var(--muted);font-size:0.72rem;text-align:right;margin-top:10px;letter-spacing:0.5px;">Actualizado: '+timeStr+'</p>';
+
+    cont.innerHTML = html;
   });
 }
 
