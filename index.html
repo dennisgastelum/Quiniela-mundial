@@ -1528,37 +1528,50 @@ function simGroup(g, data, fromResults) {
   return teams.slice().sort(function(a,b){return (pts[b]-pts[a])||(gd[b]-gd[a])||(gs[b]-gs[a])||a.localeCompare(b);});
 }
 
+function cdtDateKey(matchId) {
+  var utc = KICKOFF_UTC[matchId];
+  if(!utc) return null;
+  var d = new Date(new Date(utc).getTime() - 5*60*60*1000);
+  var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return d.getUTCDate()+' '+months[d.getUTCMonth()];
+}
+
 function calcScore(picks, results) {
   var total=0, detail=[];
   MATCHES.filter(function(m){return m.group;}).forEach(function(m){
     var r=results[m.id], p=picks.matches&&picks.matches[m.id];
     if(!r||!r.winner||!p||!p.winner) return;
+    var day=cdtDateKey(m.id);
     if(p.winner===r.winner){
-      total+=2; detail.push({pts:2,note:'✅ '+m.id});
-      if(String(p.home||'0')===String(r.home||'0')&&String(p.away||'0')===String(r.away||'0')){total+=3;detail.push({pts:3,note:'🎯 '+m.id+' exacto'});}
+      total+=2; detail.push({pts:2,note:'✅ '+m.id,day:day,matchId:m.id});
+      if(String(p.home||'0')===String(r.home||'0')&&String(p.away||'0')===String(r.away||'0')){total+=3;detail.push({pts:3,note:'🎯 '+m.id+' exacto',day:day,matchId:m.id});}
     }
   });
   Object.keys(GROUPS).forEach(function(g){
     var gm=MATCHES.filter(function(m){return m.group===g;});
     if(!gm.every(function(m){return results[m.id]&&results[m.id].winner;})) return;
+    // Qualification points awarded on the last match day of the group
+    var lastMatch = gm[gm.length-1];
+    var day = cdtDateKey(lastMatch.id);
     var actual=simGroup(g,results,true), player=simGroup(g,picks,false);
     [player[0],player[1]].forEach(function(t){
       if(actual[0]===t||actual[1]===t){
-        total+=4; detail.push({pts:4,note:'🔵 '+td(t).name+' clasifica Grp '+g});
-        if(t===player[0]&&t===actual[0]){total+=2;detail.push({pts:2,note:'🥇 '+td(t).name+' 1.º'});}
+        total+=4; detail.push({pts:4,note:'🔵 '+td(t).name+' clasifica Grp '+g,day:day,matchId:lastMatch.id});
+        if(t===player[0]&&t===actual[0]){total+=2;detail.push({pts:2,note:'🥇 '+td(t).name+' 1.º',day:day,matchId:lastMatch.id});}
       }
     });
   });
   MATCHES.filter(function(m){return !m.group;}).forEach(function(m){
     var r=results[m.id], p=picks.matches&&picks.matches[m.id];
     if(!r||!r.winner||!p) return;
+    var day=cdtDateKey(m.id)||'Eliminatorias';
     var pts=ROUND_PTS[m.round]||8;
     var bonus=METHOD_BONUS[m.round]||0;
-    if(p.winner&&p.winner===r.winner){total+=pts;detail.push({pts:pts,note:'✅ '+m.id+' (+'+pts+')'});}
-    if(p.method&&r.method&&p.method===r.method){total+=bonus;detail.push({pts:bonus,note:'⏱️ '+m.id+' método (+'+bonus+')'});}
+    if(p.winner&&p.winner===r.winner){total+=pts;detail.push({pts:pts,note:'✅ '+m.id+' (+'+pts+')',day:day,matchId:m.id});}
+    if(p.method&&r.method&&p.method===r.method){total+=bonus;detail.push({pts:bonus,note:'⏱️ '+m.id+' método (+'+bonus+')',day:day,matchId:m.id});}
   });
   var champ=localStorage.getItem('wc_champion');
-  if(champ&&picks.champion===champ){total+=30;detail.push({pts:30,note:'👑 Campeón'});}
+  if(champ&&picks.champion===champ){total+=30;detail.push({pts:30,note:'👑 Campeón',day:'Campeón',matchId:null});}
   return {total:total,detail:detail};
 }
 
@@ -1583,66 +1596,100 @@ function loadAndRenderLeaderboard() {
       return;
     }
 
-    var prevScores = getLocal('wc_prev_scores');
+    // Score everyone
     var scored = Object.values(allPicks).map(function(p) {
       var s = calcScore(p, results);
-      var prev = prevScores[p.name||'?'] !== undefined ? prevScores[p.name||'?'] : null;
-      var todayPts = prev !== null ? s.total - prev : null;
-      return {name: p.name||'?', total: s.total, detail: s.detail, todayPts: todayPts};
+      var championKey = p.champion || '';
+      var championTeam = championKey ? (TEAM_DATA[championKey] || {flag:'🏳️', name:championKey}) : null;
+      var championStr = championTeam ? championTeam.flag+' '+championTeam.name : '—';
+      return {name: p.name||'?', total: s.total, detail: s.detail, champion: championStr};
     }).sort(function(a,b){ return b.total - a.total; });
 
-    var maxPts = scored.length ? scored[0].total : 1;
+    // Collect all days that have any points, sorted chronologically
+    var daySet = {};
+    scored.forEach(function(p) {
+      p.detail.forEach(function(d) { if(d.day) daySet[d.day] = true; });
+    });
+
+    // Sort days — group stage days are "D Mon YYYY" format, sort by date
+    var months = {Ene:0,Feb:1,Mar:2,Abr:3,May:4,Jun:5,Jul:6,Ago:7,Sep:8,Oct:9,Nov:10,Dic:11};
+    var allDays = Object.keys(daySet).filter(function(d){ return d !== 'Campeón'; }).sort(function(a,b){
+      var pa = a.split(' '), pb = b.split(' ');
+      var da = new Date(2026, months[pa[1]]||0, parseInt(pa[0])||1);
+      var db = new Date(2026, months[pb[1]]||0, parseInt(pb[0])||1);
+      return da - db;
+    });
+    if(daySet['Campeón']) allDays.push('Campeón');
+
+    // Show only last 7 days (plus Campeón if present)
+    var champDay = allDays.indexOf('Campeón') > -1 ? ['Campeón'] : [];
+    var normalDays = allDays.filter(function(d){ return d !== 'Campeón'; });
+    var visibleDays = normalDays.slice(-7).concat(champDay);
+
+    // Build points-by-day per player
+    scored.forEach(function(p) {
+      p.byDay = {};
+      p.detail.forEach(function(d) {
+        if(!d.day) return;
+        p.byDay[d.day] = (p.byDay[d.day] || 0) + d.pts;
+      });
+    });
+
     var medals = ['🥇','🥈','🥉'];
 
-    // Build table
-    var html = '<div style="overflow-x:auto;">';
-    html += '<table style="width:100%;border-collapse:collapse;font-size:0.88rem;">';
+    // Table
+    var html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:0.83rem;min-width:400px;">';
+
+    // Header
     html += '<thead><tr style="border-bottom:2px solid var(--border);">';
-    html += '<th style="padding:8px 10px;text-align:left;font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;width:36px;">#</th>';
-    html += '<th style="padding:8px 10px;text-align:left;font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;">Jugador</th>';
-    html += '<th style="padding:8px 10px;text-align:right;font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;">Hoy</th>';
-    html += '<th style="padding:8px 10px;text-align:right;font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;">Total</th>';
+    html += '<th style="padding:8px 10px;text-align:left;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;position:sticky;left:0;background:var(--panel);z-index:1;">Jugador</th>';
+    html += '<th style="padding:8px 6px;text-align:center;font-size:0.68rem;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;min-width:80px;">👑 Campeón</th>';
+    visibleDays.forEach(function(day) {
+      var label = day === 'Campeón' ? '👑' : day;
+      html += '<th style="padding:8px 6px;text-align:center;font-size:0.68rem;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;min-width:52px;">'+label+'</th>';
+    });
+    html += '<th style="padding:8px 10px;text-align:right;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:700;white-space:nowrap;">Total</th>';
     html += '</tr></thead><tbody>';
 
+    // Rows
     scored.forEach(function(p, i) {
-      var isTop3 = i < 3;
-      var rowBg = i === 0 ? 'rgba(255,214,0,0.05)' : (i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent');
-      var todayStr = p.todayPts !== null
-        ? (p.todayPts > 0 ? '<span style="color:var(--green);font-weight:700;">+'+p.todayPts+'</span>' : '<span style="color:var(--muted);">+0</span>')
-        : '<span style="color:var(--muted);">—</span>';
-
-      // Progress bar width
-      var barPct = maxPts > 0 ? Math.round((p.total / maxPts) * 100) : 0;
-      var barColor = i === 0 ? 'var(--gold)' : (i === 1 ? '#c0c0c0' : (i === 2 ? '#cd7f32' : 'var(--green)'));
+      var rowBg = i === 0 ? 'rgba(255,214,0,0.04)' : (i%2===0 ? 'rgba(255,255,255,0.02)' : 'transparent');
+      var rankColor = i===0?'var(--gold)':(i===1?'#c0c0c0':(i===2?'#cd7f32':'var(--muted)'));
 
       html += '<tr style="background:'+rowBg+';border-bottom:0.5px solid var(--border);">';
 
-      // Rank
-      html += '<td style="padding:12px 10px;text-align:center;font-family:\'Bebas Neue\',sans-serif;font-size:1.1rem;color:'+(isTop3?barColor:'var(--muted)')+';">'+(medals[i]||(i+1))+'</td>';
+      // Name — sticky
+      html += '<td style="padding:11px 10px;font-weight:600;white-space:nowrap;position:sticky;left:0;background:'+rowBg+';z-index:1;">'+
+        '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1rem;color:'+rankColor+';margin-right:6px;">'+(medals[i]||(i+1))+'</span>'+
+        p.name+'</td>';
 
-      // Name + progress bar
-      html += '<td style="padding:12px 10px;">';
-      html += '<div style="font-weight:600;margin-bottom:4px;">'+p.name+'</div>';
-      html += '<div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.07);overflow:hidden;">';
-      html += '<div style="height:100%;width:'+barPct+'%;background:'+barColor+';border-radius:2px;transition:width 0.4s ease;"></div>';
-      html += '</div></td>';
+      // Champion pick
+      html += '<td style="padding:11px 6px;text-align:center;font-size:0.78rem;color:var(--text);white-space:nowrap;">'+p.champion+'</td>';
 
-      // Today pts
-      html += '<td style="padding:12px 10px;text-align:right;white-space:nowrap;">'+todayStr+'</td>';
+      // Day columns
+      visibleDays.forEach(function(day) {
+        var pts = p.byDay[day] || 0;
+        var color = pts > 0 ? 'var(--green)' : 'var(--muted)';
+        var weight = pts > 0 ? '700' : '400';
+        var display = pts > 0 ? '+'+pts : '—';
+        html += '<td style="padding:11px 6px;text-align:center;color:'+color+';font-weight:'+weight+';font-family:\'Bebas Neue\',sans-serif;font-size:1rem;">'+display+'</td>';
+      });
 
-      // Total pts
-      html += '<td style="padding:12px 10px;text-align:right;white-space:nowrap;"><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;color:'+(i===0?'var(--gold)':'var(--green)')+';">'+p.total+'</span><span style="font-size:0.8rem;color:var(--muted);margin-left:3px;">pts</span></td>';
+      // Total
+      html += '<td style="padding:11px 10px;text-align:right;">'+
+        '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.5rem;color:'+(i===0?'var(--gold)':'var(--green)')+';">'+p.total+'</span>'+
+        '<span style="font-size:0.75rem;color:var(--muted);margin-left:3px;">pts</span></td>';
 
       html += '</tr>';
     });
 
     html += '</tbody></table></div>';
 
-    // Last updated note
+    // Timestamp
     var now = new Date();
-    var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    var timeStr = now.getDate()+' '+months[now.getMonth()]+' · '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-    html += '<p style="color:var(--muted);font-size:0.72rem;text-align:right;margin-top:10px;letter-spacing:0.5px;">Actualizado: '+timeStr+'</p>';
+    var mo = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    html += '<p style="color:var(--muted);font-size:0.7rem;text-align:right;margin-top:8px;">Actualizado: '+now.getDate()+' '+mo[now.getMonth()]+' · '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+'</p>';
 
     cont.innerHTML = html;
   });
