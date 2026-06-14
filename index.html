@@ -1417,7 +1417,7 @@ function buildWhatsappMessage(day, results, allPicks) {
     lbLines += medal+' '+p.name+' — '+p.total+' pts'+deltaStr+'\n';
 
     if(p.detail && p.detail.length > 0) {
-      var detailStr = p.detail.map(function(d){ return d.note+' +'+d.pts; }).join(' · ');
+      var detailStr = p.detail.map(function(d){ return d.note; }).join(' · ');
       lbLines += '   '+detailStr+'\n';
     } else {
       lbLines += '   ❌ Sin puntos hoy\n';
