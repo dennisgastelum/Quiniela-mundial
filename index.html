@@ -965,7 +965,9 @@ function renderMatchCards(picks, results) {
       var matchPts = 0, notes = [];
       if(p.winner === r.winner) {
         matchPts += 2; notes.push('✅ Resultado +2');
-        if(String(p.home||'0')===String(r.home||'0')&&String(p.away||'0')===String(r.away||'0')){
+        var ph = parseInt(p.home)||0, pa = parseInt(p.away)||0;
+        var rh = parseInt(r.home)||0, ra = parseInt(r.away)||0;
+        if(ph===rh && pa===ra){
           matchPts += 3; notes.push('🎯 Exacto +3');
         }
       } else {
