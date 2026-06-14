@@ -1562,7 +1562,7 @@ function calcScore(picks, results) {
       var exact = String(p.home||'0')===String(r.home||'0')&&String(p.away||'0')===String(r.away||'0');
       total += 2;
       if(exact) total += 3;
-      var note = '✅ '+flags+' +2'+(exact?' 🎯 +3':'');
+      var note = flags+' +2'+(exact?' 🎯 +3':'');
       detail.push({pts: exact?5:2, note:note, day:day, matchId:m.id});
     }
   });
