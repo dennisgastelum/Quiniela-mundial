@@ -1399,10 +1399,7 @@ function buildWhatsappMessage(day, results, allPicks) {
     var s = calcScore(p, results);
     // Filter detail to only today's matches
     var todayDetail = s.detail.filter(function(d) {
-      // Match detail notes contain match ID e.g. "✅ A1", "🎯 A1 exacto", "🔵 Brasil clasifica Grp A"
-      // Check if any of today's match IDs appear in the note
-      var matchId = d.note.split(' ')[1]; // e.g. "A1" from "✅ A1"
-      return todayMatchIds[matchId];
+      return d.matchId && todayMatchIds[d.matchId];
     });
     return {name: p.name||'?', total: s.total, detail: todayDetail};
   }).sort(function(a,b){return b.total - a.total;});
@@ -1549,28 +1546,33 @@ function cdtDateKey(matchId) {
   return d.getUTCDate()+' '+months[d.getUTCMonth()];
 }
 
+function matchFlags(m) {
+  var ht = td(m.home), at = td(m.away);
+  return ht.flag+' vs '+at.flag;
+}
+
 function calcScore(picks, results) {
   var total=0, detail=[];
   MATCHES.filter(function(m){return m.group;}).forEach(function(m){
     var r=results[m.id], p=picks.matches&&picks.matches[m.id];
     if(!r||!r.winner||!p||!p.winner) return;
     var day=cdtDateKey(m.id);
+    var flags=matchFlags(m);
     if(p.winner===r.winner){
-      total+=2; detail.push({pts:2,note:'✅ '+m.id,day:day,matchId:m.id});
-      if(String(p.home||'0')===String(r.home||'0')&&String(p.away||'0')===String(r.away||'0')){total+=3;detail.push({pts:3,note:'🎯 '+m.id+' exacto',day:day,matchId:m.id});}
+      total+=2; detail.push({pts:2,note:'✅ '+flags,day:day,matchId:m.id});
+      if(String(p.home||'0')===String(r.home||'0')&&String(p.away||'0')===String(r.away||'0')){total+=3;detail.push({pts:3,note:'🎯 '+flags+' exacto',day:day,matchId:m.id});}
     }
   });
   Object.keys(GROUPS).forEach(function(g){
     var gm=MATCHES.filter(function(m){return m.group===g;});
     if(!gm.every(function(m){return results[m.id]&&results[m.id].winner;})) return;
-    // Qualification points awarded on the last match day of the group
     var lastMatch = gm[gm.length-1];
     var day = cdtDateKey(lastMatch.id);
     var actual=simGroup(g,results,true), player=simGroup(g,picks,false);
     [player[0],player[1]].forEach(function(t){
       if(actual[0]===t||actual[1]===t){
-        total+=4; detail.push({pts:4,note:'🔵 '+td(t).name+' clasifica Grp '+g,day:day,matchId:lastMatch.id});
-        if(t===player[0]&&t===actual[0]){total+=2;detail.push({pts:2,note:'🥇 '+td(t).name+' 1.º',day:day,matchId:lastMatch.id});}
+        total+=4; detail.push({pts:4,note:'🔵 '+td(t).flag+' '+td(t).name+' clasifica Grp '+g,day:day,matchId:lastMatch.id});
+        if(t===player[0]&&t===actual[0]){total+=2;detail.push({pts:2,note:'🥇 '+td(t).flag+' '+td(t).name+' 1.º',day:day,matchId:lastMatch.id});}
       }
     });
   });
@@ -1578,10 +1580,11 @@ function calcScore(picks, results) {
     var r=results[m.id], p=picks.matches&&picks.matches[m.id];
     if(!r||!r.winner||!p) return;
     var day=cdtDateKey(m.id)||'Eliminatorias';
+    var flags=matchFlags(m);
     var pts=ROUND_PTS[m.round]||8;
     var bonus=METHOD_BONUS[m.round]||0;
-    if(p.winner&&p.winner===r.winner){total+=pts;detail.push({pts:pts,note:'✅ '+m.id+' (+'+pts+')',day:day,matchId:m.id});}
-    if(p.method&&r.method&&p.method===r.method){total+=bonus;detail.push({pts:bonus,note:'⏱️ '+m.id+' método (+'+bonus+')',day:day,matchId:m.id});}
+    if(p.winner&&p.winner===r.winner){total+=pts;detail.push({pts:pts,note:'✅ '+flags+' (+'+pts+')',day:day,matchId:m.id});}
+    if(p.method&&r.method&&p.method===r.method){total+=bonus;detail.push({pts:bonus,note:'⏱️ '+flags+' método (+'+bonus+')',day:day,matchId:m.id});}
   });
   var champ=localStorage.getItem('wc_champion');
   if(champ&&picks.champion===champ){total+=30;detail.push({pts:30,note:'👑 Campeón',day:'Campeón',matchId:null});}
@@ -1657,7 +1660,6 @@ function loadAndRenderLeaderboard() {
     // Header
     html += '<thead><tr style="border-bottom:2px solid var(--border);">';
     html += '<th style="padding:8px 10px;text-align:left;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;position:sticky;left:0;background:var(--panel);z-index:1;">Jugador</th>';
-    html += '<th style="padding:8px 6px;text-align:center;font-size:0.68rem;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;min-width:80px;">👑 Campeón</th>';
     visibleDays.forEach(function(day) {
       var label = day === 'Campeón' ? '👑' : day;
       html += '<th style="padding:8px 6px;text-align:center;font-size:0.68rem;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;min-width:52px;">'+label+'</th>';
@@ -1672,13 +1674,11 @@ function loadAndRenderLeaderboard() {
 
       html += '<tr style="background:'+rowBg+';border-bottom:0.5px solid var(--border);">';
 
-      // Name — sticky
+      // Name — sticky, with champion flag
+      var champFlag = p.champion !== '—' ? ' <span style="font-size:0.85rem;" title="'+p.champion+'">'+p.champion.split(' ')[0]+'</span>' : '';
       html += '<td style="padding:11px 10px;font-weight:600;white-space:nowrap;position:sticky;left:0;background:'+rowBg+';z-index:1;">'+
         '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1rem;color:'+rankColor+';margin-right:6px;">'+(medals[i]||(i+1))+'</span>'+
-        p.name+'</td>';
-
-      // Champion pick
-      html += '<td style="padding:11px 6px;text-align:center;font-size:0.78rem;color:var(--text);white-space:nowrap;">'+p.champion+'</td>';
+        p.name+champFlag+'</td>';
 
       // Day columns
       visibleDays.forEach(function(day) {
