@@ -1180,47 +1180,70 @@ function submitPicks() {
   var name = document.getElementById('player-name').value.trim();
   if(!name){alert('Por favor escribe tu nombre primero.');return;}
 
-  // Preserve the original champion pick — never overwrite once set
-  var local = getLocal('wc_picks_local');
-  var existing = local[name] || {};
-  var originalChampion = existing.champion || '';
-  var currentChampion = document.getElementById('champion-pick').value;
-  // If player already had a champion saved, keep it — ignore any new selection
-  var champion = originalChampion || currentChampion;
-
-  var picks = {name:name, champion:champion, matches:{}, submittedAt:existing.submittedAt||new Date().toISOString()};
-  MATCHES.forEach(function(m){
-    var pw = document.getElementById('pw-'+m.id);
-    var ph = document.getElementById('ph-'+m.id);
-    var pa = document.getElementById('pa-'+m.id);
-    var pm = document.getElementById('pm-'+m.id);
-    picks.matches[m.id]={winner:pw?pw.value:'',home:ph?ph.value:'',away:pa?pa.value:'',method:pm?pm.value:''};
-  });
-
-  // Warn if any unlocked match has scores entered but no winner selected
-  var missingWinner = [];
-  MATCHES.forEach(function(m) {
-    if(!m.group) return;
-    if(isLocked(m.id)) return;
-    var p = picks.matches[m.id];
-    if(!p) return;
-    var hasScore = (p.home !== '' && p.home !== '0') || (p.away !== '' && p.away !== '0');
-    if(hasScore && !p.winner) missingWinner.push(m.id);
-  });
-
-  if(missingWinner.length > 0) {
-    var confirmMsg = '⚠️ Hay ' + missingWinner.length + ' partido(s) con marcador introducido pero sin ganador seleccionado:\n\n' +
-      missingWinner.join(', ') + '\n\n¿Quieres enviar de todos modos? Sin ganador no se otorgan puntos para esos partidos.';
-    if(!confirm(confirmMsg)) return;
-  }
-  local[name]=picks; setLocal('wc_picks_local',local);
   var btn = document.getElementById('submit-btn');
-  btn.innerHTML='<span class="spinner"></span>Enviando…'; btn.disabled=true;
-  sheetPost({action:'savePick',name:name,picks:picks}).then(function(ok){
-    btn.innerHTML='📤 Enviar Pronósticos'; btn.disabled=false;
-    document.getElementById('save-success').style.display=(ok||!getSheetUrl())?'block':'none';
-    document.getElementById('save-error').style.display=(!ok&&getSheetUrl())?'block':'none';
-    if(ok||!getSheetUrl()) setTimeout(function(){document.getElementById('save-success').style.display='none';},5000);
+  btn.innerHTML='<span class="spinner"></span>Verificando…'; btn.disabled=true;
+
+  // Always fetch latest saved picks from sheet first to protect locked matches
+  sheetGet('getPicks').then(function(sp) {
+    var local = getLocal('wc_picks_local');
+    var sheetPicks = (sp && sp.picks && sp.picks[name]) ? sp.picks[name] : null;
+    // Case-insensitive match
+    if(!sheetPicks && sp && sp.picks) {
+      var nl = name.toLowerCase();
+      Object.keys(sp.picks).forEach(function(k){ if(k.toLowerCase()===nl) sheetPicks=sp.picks[k]; });
+    }
+    var existing = sheetPicks || local[name] || {};
+
+    // Preserve champion
+    var originalChampion = existing.champion || '';
+    var currentChampion = document.getElementById('champion-pick').value;
+    var champion = originalChampion || currentChampion;
+
+    var picks = {name:name, champion:champion, matches:{}, submittedAt:existing.submittedAt||new Date().toISOString()};
+    MATCHES.forEach(function(m){
+      // For locked matches, always preserve the existing saved pick — never overwrite with empty disabled fields
+      if(isLocked(m.id) && existing.matches && existing.matches[m.id] && existing.matches[m.id].winner) {
+        picks.matches[m.id] = existing.matches[m.id];
+        return;
+      }
+      var pw = document.getElementById('pw-'+m.id);
+      var ph = document.getElementById('ph-'+m.id);
+      var pa = document.getElementById('pa-'+m.id);
+      var pm = document.getElementById('pm-'+m.id);
+      picks.matches[m.id]={winner:pw?pw.value:'',home:ph?ph.value:'',away:pa?pa.value:'',method:pm?pm.value:''};
+    });
+
+    // Warn if submitting with very few picks and no prior data loaded
+    var filledCount = Object.values(picks.matches).filter(function(m){ return m.winner; }).length;
+    if(filledCount === 0) {
+      btn.innerHTML='📤 Enviar Pronósticos'; btn.disabled=false;
+      if(!confirm('⚠️ No hay ningún pronóstico seleccionado.\n\n¿Has cargado tus picks con el botón "📥 Cargar mis pronósticos"? Si envías ahora borrarás tus picks guardados.\n\n¿Quieres continuar de todos modos?')) return;
+    }
+
+    // Warn if any unlocked match has scores entered but no winner selected
+    var missingWinner = [];
+    MATCHES.forEach(function(m) {
+      if(!m.group) return;
+      if(isLocked(m.id)) return;
+      var p = picks.matches[m.id];
+      if(!p) return;
+      var hasScore = (p.home !== '' && p.home !== '0') || (p.away !== '' && p.away !== '0');
+      if(hasScore && !p.winner) missingWinner.push(m.id);
+    });
+    if(missingWinner.length > 0) {
+      var confirmMsg = '⚠️ Hay ' + missingWinner.length + ' partido(s) con marcador introducido pero sin ganador seleccionado:\n\n' +
+        missingWinner.join(', ') + '\n\n¿Quieres enviar de todos modos? Sin ganador no se otorgan puntos para esos partidos.';
+      if(!confirm(confirmMsg)) { btn.innerHTML='📤 Enviar Pronósticos'; btn.disabled=false; return; }
+    }
+
+    local[name]=picks; setLocal('wc_picks_local',local);
+    btn.innerHTML='<span class="spinner"></span>Enviando…';
+    sheetPost({action:'savePick',name:name,picks:picks}).then(function(ok){
+      btn.innerHTML='📤 Enviar Pronósticos'; btn.disabled=false;
+      document.getElementById('save-success').style.display=(ok||!getSheetUrl())?'block':'none';
+      document.getElementById('save-error').style.display=(!ok&&getSheetUrl())?'block':'none';
+      if(ok||!getSheetUrl()) setTimeout(function(){document.getElementById('save-success').style.display='none';},5000);
+    });
   });
 }
 
