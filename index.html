@@ -1559,8 +1559,11 @@ function calcScore(picks, results) {
     var day=cdtDateKey(m.id);
     var flags=matchFlags(m);
     if(p.winner===r.winner){
-      total+=2; detail.push({pts:2,note:'✅ '+flags,day:day,matchId:m.id});
-      if(String(p.home||'0')===String(r.home||'0')&&String(p.away||'0')===String(r.away||'0')){total+=3;detail.push({pts:3,note:'🎯 '+flags+' exacto',day:day,matchId:m.id});}
+      var exact = String(p.home||'0')===String(r.home||'0')&&String(p.away||'0')===String(r.away||'0');
+      total += 2;
+      if(exact) total += 3;
+      var note = '✅ '+flags+' +2'+(exact?' 🎯 +3':'');
+      detail.push({pts: exact?5:2, note:note, day:day, matchId:m.id});
     }
   });
   Object.keys(GROUPS).forEach(function(g){
