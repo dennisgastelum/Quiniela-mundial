@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1425,15 +1424,38 @@ function buildWhatsappMessage(day, results, allPicks) {
   // Build today's results — only matches that kicked off in the last 24 hours
   var resultLines = '';
   var matchCount = 0;
+  var totalPlayers = Object.keys(allPicks).length;
+  var maxPtsPerMatch = totalPlayers * 2; // max possible per match (result only)
+
   MATCHES.forEach(function(m) {
     var r = results[m.id];
     if(!r || !r.winner) return;
-    // Only include if match kicked off in the last 24h
     var ko = KICKOFF_UTC[m.id] ? new Date(KICKOFF_UTC[m.id]) : null;
     if(ko && (ko < last24h || ko > now)) return;
     var ht = td(m.home), at = td(m.away);
     var score = (r.home!==''&&r.away!=='') ? r.home+' – '+r.away : '– –';
-    resultLines += ht.flag+' '+ht.name+' '+score+' '+at.name+' '+at.flag+'\n';
+
+    // Count points awarded and exact scores for this match
+    var ptsAwarded = 0;
+    var exactCount = 0;
+    Object.values(allPicks).forEach(function(p) {
+      var pick = p.matches && p.matches[m.id];
+      if(!pick || !pick.winner) return;
+      if(pick.winner === r.winner) {
+        ptsAwarded += 2;
+        var exact = parseInt(pick.home)||0 === parseInt(r.home)||0 &&
+                    parseInt(pick.away)||0 === parseInt(r.away)||0;
+        // use string comparison to be safe
+        if(String(pick.home||'0')===String(r.home||'0') && String(pick.away||'0')===String(r.away||'0')) {
+          ptsAwarded += 3;
+          exactCount++;
+        }
+      }
+    });
+
+    var statsStr = ' · '+ptsAwarded+'/'+maxPtsPerMatch+' pts';
+    if(exactCount > 0) statsStr += ' 🎯 ×'+exactCount;
+    resultLines += ht.flag+' '+ht.name+' '+score+' '+at.name+' '+at.flag+statsStr+'\n';
     matchCount++;
   });
 
