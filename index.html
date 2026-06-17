@@ -1435,7 +1435,7 @@ function buildWhatsappMessage(day, results, allPicks) {
     var ht = td(m.home), at = td(m.away);
     var score = (r.home!==''&&r.away!=='') ? r.home+' – '+r.away : '– –';
 
-    // Count points awarded and exact scores for this match
+    // Count points awarded (winner only, not exact bonus) and exact scores separately
     var ptsAwarded = 0;
     var exactCount = 0;
     Object.values(allPicks).forEach(function(p) {
@@ -1443,11 +1443,7 @@ function buildWhatsappMessage(day, results, allPicks) {
       if(!pick || !pick.winner) return;
       if(pick.winner === r.winner) {
         ptsAwarded += 2;
-        var exact = parseInt(pick.home)||0 === parseInt(r.home)||0 &&
-                    parseInt(pick.away)||0 === parseInt(r.away)||0;
-        // use string comparison to be safe
         if(String(pick.home||'0')===String(r.home||'0') && String(pick.away||'0')===String(r.away||'0')) {
-          ptsAwarded += 3;
           exactCount++;
         }
       }
