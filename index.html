@@ -637,12 +637,15 @@ function showTab(id) {
   if(tab) tab.classList.add('active');
   if(id==='leaderboard') loadAndRenderLeaderboard();
   if(id==='admin') {
-    sheetGet('getSchedule').then(function(ss) {
+    Promise.all([sheetGet('getSchedule'), sheetGet('getResults')]).then(function(vals) {
+      var ss = vals[0], sr = vals[1];
       if(ss && ss.schedule) {
         applySchedule(ss.schedule);
         setLocal('wc_schedule_cache', ss.schedule);
       }
-      renderAdminMatches();
+      var results = (sr && sr.results) ? sr.results : getLocal('wc_results_local');
+      if(sr && sr.results) setLocal('wc_results_local', sr.results);
+      renderAdminMatches(results);
     });
   }
   if(id==='enter') {
@@ -1284,9 +1287,9 @@ function submitPicks() {
 }
 
 // ════════ ADMIN ════════
-function renderAdminMatches() {
+function renderAdminMatches(results) {
   var cont = document.getElementById('admin-matches');
-  var results = getLocal('wc_results_local');
+  results = results || getLocal('wc_results_local');
   var view = getAdminView();
   var curRound=''; cont.innerHTML='';
 
