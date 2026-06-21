@@ -340,6 +340,11 @@ function simpleScore(picks, results) {
     <div id="lb-loading" class="info-box" style="display:none;">⏳ Cargando desde Google Sheets…</div>
     <div id="leaderboard-content"><p style="color:var(--muted);font-size:0.9rem;">Conecta Google Sheets en Configuración para ver la clasificación en directo.</p></div>
   </div>
+  <div class="card">
+    <h2>📈 Evolución del Torneo</h2>
+    <p style="color:var(--muted);font-size:0.82rem;margin-bottom:4px;">La posición de cada jugador día a día. Desliza para ver el torneo completo.</p>
+    <div id="bump-chart-content"></div>
+  </div>
   <button class="btn btn-outline" id="refresh-lb-btn" style="width:100%;">🔄 Actualizar</button>
 </div>
 
@@ -1446,30 +1451,32 @@ function generateWhatsapp() {
   btn.innerHTML = '<span class="spinner"></span>Cargando…';
   btn.disabled = true;
 
-  Promise.all([sheetGet('getPicks'), sheetGet('getResults')]).then(function(vals) {
+  Promise.all([sheetGet('getPicks'), sheetGet('getResults'), sheetGet('getSnapshot')]).then(function(vals) {
     btn.innerHTML = '📋 Generar y Copiar Resumen';
     btn.disabled = false;
 
-    var sp = vals[0], sr = vals[1];
+    var sp = vals[0], sr = vals[1], ssnap = vals[2];
     var results = (sr && sr.results) ? sr.results : getLocal('wc_results_local');
     var allPicks = (sp && sp.picks) ? sp.picks : getLocal('wc_picks_local');
+    var prevScores = (ssnap && ssnap.snapshot) ? ssnap.snapshot : getLocal('wc_prev_scores');
 
     // Also update localStorage with fresh data
     if(sr && sr.results) setLocal('wc_results_local', sr.results);
     if(sp && sp.picks) setLocal('wc_picks_local', sp.picks);
 
-    buildWhatsappMessage(day, results, allPicks);
+    buildWhatsappMessage(day, results, allPicks, prevScores);
   }).catch(function() {
     btn.innerHTML = '📋 Generar y Copiar Resumen';
     btn.disabled = false;
     // Fall back to local data if sheet unavailable
     var results = getLocal('wc_results_local');
     var allPicks = getLocal('wc_picks_local');
-    buildWhatsappMessage(day, results, allPicks);
+    var prevScores = getLocal('wc_prev_scores');
+    buildWhatsappMessage(day, results, allPicks, prevScores);
   });
 }
 
-function buildWhatsappMessage(day, results, allPicks) {
+function buildWhatsappMessage(day, results, allPicks, prevScores) {
   var now = new Date();
   var last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   var in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -1517,7 +1524,8 @@ function buildWhatsappMessage(day, results, allPicks) {
   }
 
   // Load previous snapshot to compute daily delta
-  var prevScores = getLocal('wc_prev_scores'); // {name: totalPts}
+  // prevScores passed in from sheet (with localStorage fallback)
+  prevScores = prevScores || {};
 
   // Build set of match IDs that kicked off in the last 24h (today's matches)
   var todayMatchIds = {};
@@ -1569,10 +1577,11 @@ function buildWhatsappMessage(day, results, allPicks) {
     lbLines += '··· '+totalPlayers+' participantes en total · Clasificación completa en la app\n';
   }
 
-  // Save current scores as snapshot for next day's delta
+  // Save current scores as snapshot for next day's delta — to sheet, so all devices share it
   var snapshot = {};
   scored.forEach(function(p){ snapshot[p.name] = p.total; });
   setLocal('wc_prev_scores', snapshot);
+  sheetPost({action:'saveSnapshot', snapshot:snapshot});
 
   // Gap line
   var gapLine = '';
@@ -1862,7 +1871,109 @@ function loadAndRenderLeaderboard() {
     html += '<p style="color:var(--muted);font-size:0.7rem;text-align:right;margin-top:8px;">Actualizado: '+now.getDate()+' '+mo[now.getMonth()]+' · '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+'</p>';
 
     cont.innerHTML = html;
+
+    // ═══ BUMP CHART — rank evolution over the full tournament ═══
+    renderBumpChart(scored, allDays);
   });
+}
+
+function renderBumpChart(scored, allDays) {
+  var bumpCont = document.getElementById('bump-chart-content');
+  if(!bumpCont) return;
+  if(!allDays.length || scored.length < 2) { bumpCont.innerHTML = ''; return; }
+
+  // Compute cumulative total per player per day
+  var cumByPlayer = {};
+  scored.forEach(function(p) {
+    var running = 0;
+    cumByPlayer[p.name] = allDays.map(function(day) {
+      running += (p.byDay[day] || 0);
+      return running;
+    });
+  });
+
+  // Compute rank per day (competition ranking — ties share rank)
+  var rankByPlayerByDay = {}; // name -> [rank per day]
+  scored.forEach(function(p){ rankByPlayerByDay[p.name] = []; });
+
+  allDays.forEach(function(day, di) {
+    var snapshot = scored.map(function(p) {
+      return {name: p.name, cum: cumByPlayer[p.name][di]};
+    }).sort(function(a,b){ return b.cum - a.cum; });
+
+    var rank = 0;
+    snapshot.forEach(function(s, i) {
+      if(i === 0 || s.cum < snapshot[i-1].cum) rank = i + 1;
+      rankByPlayerByDay[s.name].push(rank);
+    });
+  });
+
+  var numPlayers = scored.length;
+  var numDays = allDays.length;
+
+  // SVG layout
+  var leftLabelW = 92, rightLabelW = 92;
+  var rowH = 22;
+  var chartH = Math.max(numPlayers * rowH, 200);
+  var colW = numDays > 1 ? Math.max(46, Math.min(64, 600 / numDays)) : 200;
+  var chartW = (numDays - 1) * colW;
+  var svgW = leftLabelW + chartW + rightLabelW;
+  var svgH = chartH + 20;
+
+  // Distinct colors for lines, cycling through a palette
+  var palette = ['#00c853','#ffd600','#4fc3f7','#ff3d3d','#ba68c8','#ff8a65','#26c6da','#9ccc65',
+                  '#f06292','#7986cb','#aed581','#4db6ac','#ffb74d','#90a4ae','#e57373','#64b5f6',
+                  '#dce775','#a1887f','#4dd0e1','#f48fb1','#81c784','#fff176','#ce93d8'];
+
+  function yForRank(r) { return 10 + (r - 0.5) * (chartH / numPlayers); }
+  function xForDay(i) { return leftLabelW + i * colW; }
+
+  var svg = '<svg viewBox="0 0 '+svgW+' '+svgH+'" width="100%" style="min-width:'+svgW+'px;display:block;">';
+
+  // Day labels (rotated, abbreviated) along the bottom — only show every Nth if crowded
+  var labelEvery = numDays > 18 ? 2 : 1;
+  allDays.forEach(function(day, i) {
+    if(i % labelEvery !== 0 && i !== numDays-1) return;
+    var shortLabel = day.split(' ')[0]; // just the day number
+    svg += '<text x="'+xForDay(i)+'" y="'+(svgH-4)+'" font-size="9" fill="#5a7a60" text-anchor="middle" font-family="Barlow">'+shortLabel+'</text>';
+  });
+
+  // Lines per player
+  scored.forEach(function(p, idx) {
+    var color = palette[idx % palette.length];
+    var ranks = rankByPlayerByDay[p.name];
+    var pathD = '';
+    ranks.forEach(function(r, i) {
+      var x = xForDay(i), y = yForRank(r);
+      pathD += (i===0?'M':'L')+x+','+y+' ';
+    });
+    svg += '<path d="'+pathD+'" fill="none" stroke="'+color+'" stroke-width="2" opacity="0.85"/>';
+    // Dots at each day
+    ranks.forEach(function(r, i) {
+      svg += '<circle cx="'+xForDay(i)+'" cy="'+yForRank(r)+'" r="2.5" fill="'+color+'"/>';
+    });
+  });
+
+  // Left labels — starting rank order
+  scored.forEach(function(p, idx) {
+    var color = palette[idx % palette.length];
+    var startRank = rankByPlayerByDay[p.name][0];
+    var y = yForRank(startRank);
+    svg += '<text x="'+(leftLabelW-8)+'" y="'+(y+3.5)+'" font-size="10" fill="'+color+'" text-anchor="end" font-family="Barlow" font-weight="600">'+p.name+'</text>';
+  });
+
+  // Right labels — final rank order
+  scored.forEach(function(p, idx) {
+    var color = palette[idx % palette.length];
+    var ranks = rankByPlayerByDay[p.name];
+    var endRank = ranks[ranks.length-1];
+    var y = yForRank(endRank);
+    svg += '<text x="'+(leftLabelW+chartW+8)+'" y="'+(y+3.5)+'" font-size="10" fill="'+color+'" text-anchor="start" font-family="Barlow" font-weight="600">'+p.name+'</text>';
+  });
+
+  svg += '</svg>';
+
+  bumpCont.innerHTML = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:8px 0;">'+svg+'</div>';
 }
 
 // ════════ START ════════
