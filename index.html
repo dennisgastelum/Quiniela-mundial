@@ -98,6 +98,14 @@
   .match-pts{margin-top:8px;padding:8px 12px;border-radius:8px;font-size:0.82rem;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .match-pts.scored{background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.2);color:#a5d6a7;}
   .match-pts.missed{background:rgba(255,61,61,0.07);border:1px solid rgba(255,61,61,0.2);color:#ef9a9a;}
+  .section-accordion{margin-bottom:18px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--panel);}
+  .section-summary{list-style:none;cursor:pointer;padding:16px 18px;font-family:'Bebas Neue',sans-serif;font-size:1.25rem;letter-spacing:1px;color:var(--gold);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.02);user-select:none;}
+  .section-summary::-webkit-details-marker{display:none;}
+  .section-summary::before{content:'▸';display:inline-block;margin-right:10px;color:var(--green);transition:transform 0.2s;font-size:1rem;}
+  details[open]>.section-summary::before{transform:rotate(90deg);}
+  .section-count{font-family:'Barlow',sans-serif;font-size:0.75rem;color:var(--muted);letter-spacing:0;font-weight:600;text-transform:none;margin-left:auto;}
+  .section-body{padding:14px 16px 4px;}
+  .section-body .card:first-child{margin-top:0;}
   .pts-total{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green);margin-right:2px;}
   .missed .pts-total{color:var(--red);}
   @media(max-width:500px){
@@ -947,66 +955,37 @@ function renderMatchCards(picks, results) {
   results = results || getLocal('wc_results_local');
   var view = getPicksView();
   var cont = document.getElementById('matches-container');
-  var gridMap = {};
   cont.innerHTML = '';
 
-  // Get group stage matches and sort based on view
-  var groupMatches = MATCHES.filter(function(m){ return m.group; });
-  if(view === 'chrono') {
-    groupMatches = groupMatches.slice().sort(function(a, b) {
+  // Split group matches into finished (locked) and upcoming (unlocked)
+  var allGroupMatches = MATCHES.filter(function(m){ return m.group; });
+  var finishedMatches = allGroupMatches.filter(function(m){ return isLocked(m.id); });
+  var upcomingMatches = allGroupMatches.filter(function(m){ return !isLocked(m.id); });
+
+  function sortByView(list) {
+    if(view !== 'chrono') return list;
+    return list.slice().sort(function(a, b) {
       var ta = KICKOFF_UTC[a.id] ? new Date(KICKOFF_UTC[a.id]).getTime() : 0;
       var tb = KICKOFF_UTC[b.id] ? new Date(KICKOFF_UTC[b.id]).getTime() : 0;
       return ta - tb;
     });
   }
 
-  var curRound = '';
-
-  groupMatches.forEach(function(m) {
-    // In chrono view use Hora CDMX date as section header (UTC-5)
-    var sectionKey, sectionLabel;
-    if(view === 'chrono') {
-      if(KICKOFF_UTC[m.id]) {
-        // Convert UTC to Hora CDMX (UTC-5) for grouping
-        var cdtMs = new Date(KICKOFF_UTC[m.id]).getTime() - 6 * 60 * 60 * 1000;
-        var cdtDate = new Date(cdtMs);
-        var days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-        var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-        sectionLabel = days[cdtDate.getUTCDay()]+' '+cdtDate.getUTCDate()+' '+months[cdtDate.getUTCMonth()];
-        sectionKey = sectionLabel; // use formatted Hora CDMX date as key
-      } else {
-        sectionKey = m.round;
-        sectionLabel = m.round;
-      }
-    } else {
-      sectionKey = m.round;
-      sectionLabel = m.round;
-    }
-
-    if(sectionKey !== curRound) {
-      curRound = sectionKey;
-      var c = document.createElement('div'); c.className='card';
-      var gridId = 'rnd-'+slug(sectionKey);
-      c.innerHTML = '<h2>'+(view==='chrono'?'🕐':'⚽')+' '+sectionLabel+'</h2><div class="matches-grid" id="'+gridId+'"></div>';
-      cont.appendChild(c);
-      gridMap[sectionKey] = c.querySelector('.matches-grid');
-    }
-    var g = gridMap[sectionKey];
+  function buildMatchDiv(m) {
     var ht = td(m.home), at = td(m.away);
     var hRank = ht.rank ? '#'+ht.rank+' FIFA' : '';
     var aRank = at.rank ? '#'+at.rank+' FIFA' : '';
     var kickoffHtml = m.kickoff ? '<div class="kickoff-badge">🕐 '+m.kickoff+(m.city?' · 📍 '+m.city:'')+'</div>' : '';
 
-    // Per-match points summary
     var ptsHtml = '';
     var r = results[m.id], p = picks.matches && picks.matches[m.id];
     if(r && r.winner && p && p.winner && isLocked(m.id)) {
       var matchPts = 0, notes = [];
       if(p.winner === r.winner) {
         matchPts += 2; notes.push('✅ Resultado +2');
-        var ph = parseInt(p.home)||0, pa = parseInt(p.away)||0;
-        var rh = parseInt(r.home)||0, ra = parseInt(r.away)||0;
-        if(ph===rh && pa===ra){
+        var ph0 = parseInt(p.home)||0, pa0 = parseInt(p.away)||0;
+        var rh0 = parseInt(r.home)||0, ra0 = parseInt(r.away)||0;
+        if(ph0===rh0 && pa0===ra0){
           matchPts += 3; notes.push('🎯 Exacto +3');
         }
       } else {
@@ -1048,9 +1027,7 @@ function renderMatchCards(picks, results) {
         '<div><label>Goles '+at.name+'</label><input type="number" id="pa-'+m.id+'" min="0" max="20" placeholder="0"></div>'+
       '</div>'+
       ptsHtml;
-    g.appendChild(div);
 
-    // Restore saved pick values FIRST, then lock
     if(p) {
       var pw = div.querySelector('#pw-'+m.id);
       var ph = div.querySelector('#ph-'+m.id);
@@ -1059,18 +1036,91 @@ function renderMatchCards(picks, results) {
       if(ph && p.home !== '') ph.value = p.home;
       if(pa && p.away !== '') pa.value = p.away;
     }
-    // Lock after restore — future matches stay editable, past matches get locked
     lockFields(div, m.id);
-  });
+    return div;
+  }
 
-  var ko = document.createElement('div'); ko.className='card';
-  ko.innerHTML='<h2>⚔️ Fase Eliminatoria</h2><div class="warn-box" style="margin-bottom:0;">Los equipos se confirmarán al terminar la fase de grupos. Vuelve para añadir tus pronósticos.</div>';
-  cont.appendChild(ko);
+  function renderMatchList(list, container) {
+    var gridMap = {};
+    var curRound = '';
+    list.forEach(function(m) {
+      var sectionKey, sectionLabel;
+      if(view === 'chrono') {
+        if(KICKOFF_UTC[m.id]) {
+          var cdtMs = new Date(KICKOFF_UTC[m.id]).getTime() - 6 * 60 * 60 * 1000;
+          var cdtDate = new Date(cdtMs);
+          var days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+          var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+          sectionLabel = days[cdtDate.getUTCDay()]+' '+cdtDate.getUTCDate()+' '+months[cdtDate.getUTCMonth()];
+          sectionKey = sectionLabel;
+        } else {
+          sectionKey = m.round;
+          sectionLabel = m.round;
+        }
+      } else {
+        sectionKey = m.round;
+        sectionLabel = m.round;
+      }
 
-  // Knockout match cards (TBD for now, will populate when teams are known)
+      if(sectionKey !== curRound) {
+        curRound = sectionKey;
+        var c = document.createElement('div'); c.className='card';
+        var gridId = 'rnd-'+slug(sectionKey)+'-'+Math.random().toString(36).slice(2,7);
+        c.innerHTML = '<h2>'+(view==='chrono'?'🕐':'⚽')+' '+sectionLabel+'</h2><div class="matches-grid" id="'+gridId+'"></div>';
+        container.appendChild(c);
+        gridMap[sectionKey] = c.querySelector('.matches-grid');
+      }
+      gridMap[sectionKey].appendChild(buildMatchDiv(m));
+    });
+  }
+
+  // ═══ SECTION 1: Partidos Finalizados (collapsed by default) ═══
+  var finDetails = document.createElement('details');
+  finDetails.className = 'section-accordion';
+  var finSummary = document.createElement('summary');
+  finSummary.className = 'section-summary';
+  finSummary.innerHTML = '✅ Partidos Finalizados <span class="section-count">('+finishedMatches.length+' partidos)</span>';
+  finDetails.appendChild(finSummary);
+  var finBody = document.createElement('div');
+  finBody.className = 'section-body';
+  finDetails.appendChild(finBody);
+  cont.appendChild(finDetails);
+  renderMatchList(sortByView(finishedMatches), finBody);
+
+  // ═══ SECTION 2: Fase de Grupos — Por Jugar (expanded by default) ═══
+  var upDetails = document.createElement('details');
+  upDetails.className = 'section-accordion';
+  upDetails.open = true;
+  var upSummary = document.createElement('summary');
+  upSummary.className = 'section-summary';
+  upSummary.innerHTML = '⚽ Fase de Grupos — Por Jugar <span class="section-count">('+upcomingMatches.length+' partidos)</span>';
+  upDetails.appendChild(upSummary);
+  var upBody = document.createElement('div');
+  upBody.className = 'section-body';
+  upDetails.appendChild(upBody);
+  cont.appendChild(upDetails);
+  renderMatchList(sortByView(upcomingMatches), upBody);
+
+  // ═══ SECTION 3: Fase Eliminatoria (collapsed by default) ═══
+  var koMatches = MATCHES.filter(function(m){ return !m.group; });
+  var koDetails = document.createElement('details');
+  koDetails.className = 'section-accordion';
+  var koSummary = document.createElement('summary');
+  koSummary.className = 'section-summary';
+  koSummary.innerHTML = '🏆 Fase Eliminatoria <span class="section-count">('+koMatches.length+' partidos)</span>';
+  koDetails.appendChild(koSummary);
+  var koBody = document.createElement('div');
+  koBody.className = 'section-body';
+  koDetails.appendChild(koBody);
+  cont.appendChild(koDetails);
+
+  var koWarn = document.createElement('div'); koWarn.className='card';
+  koWarn.innerHTML='<div class="warn-box" style="margin-bottom:0;">Los equipos se confirmarán al terminar la fase de grupos. Vuelve para añadir tus pronósticos.</div>';
+  koBody.appendChild(koWarn);
+
   var koRounds = ['Ronda de 32','Cuartos de Final','Semifinal','Final'];
   koRounds.forEach(function(round) {
-    var roundMatches = MATCHES.filter(function(m){ return m.round===round; });
+    var roundMatches = koMatches.filter(function(m){ return m.round===round; });
     if(!roundMatches.length) return;
     var bonus = METHOD_BONUS[round];
     var card = document.createElement('div'); card.className='card';
@@ -1105,7 +1155,7 @@ function renderMatchCards(picks, results) {
       grid.appendChild(div);
       lockFields(div, m.id);
     });
-    cont.appendChild(card);
+    koBody.appendChild(card);
   });
 }
 
@@ -1491,12 +1541,20 @@ function buildWhatsappMessage(day, results, allPicks) {
   var medals = ['🥇','🥈','🥉'];
   var lbLines = '';
   var totalPlayers = scored.length;
+
+  // Assign competition rank — ties share the same position
+  var rank = 0;
+  scored.forEach(function(p, i) {
+    if(i === 0 || p.total < scored[i-1].total) rank = i + 1;
+    p.rank = rank;
+  });
+
   scored.forEach(function(p, i) {
     if(i >= 10) return;
     var prev = prevScores[p.name] !== undefined ? prevScores[p.name] : 0;
     var todayPts = p.total - prev;
     var deltaStr = todayPts > 0 ? ' (+'+todayPts+' hoy)' : ' (+0 hoy)';
-    var medal = medals[i] || (i+1)+'.';
+    var medal = medals[p.rank-1] || p.rank+'.';
     lbLines += medal+' '+p.name+' — '+p.total+' pts'+deltaStr+'\n';
 
     if(p.detail && p.detail.length > 0) {
@@ -1520,7 +1578,12 @@ function buildWhatsappMessage(day, results, allPicks) {
   var gapLine = '';
   if(scored.length > 1) {
     var gap = scored[0].total - scored[1].total;
-    gapLine = gap > 0 ? scored[0].name+' lidera por '+gap+' pts' : '¡Empate en la cima!';
+    if(gap > 0) {
+      gapLine = scored[0].name+' lidera por '+gap+' pts';
+    } else {
+      var leaders = scored.filter(function(p){ return p.rank === 1; }).map(function(p){ return p.name; });
+      gapLine = '¡Empate en la cima entre '+leaders.join(', ')+'!';
+    }
   }
 
   // Date string
@@ -1707,6 +1770,13 @@ function loadAndRenderLeaderboard() {
       return {name: p.name||'?', total: s.total, detail: s.detail, champion: championStr};
     }).sort(function(a,b){ return b.total - a.total; });
 
+    // Assign competition rank — ties share the same position, next rank skips ahead
+    var rank = 0;
+    scored.forEach(function(p, i) {
+      if(i === 0 || p.total < scored[i-1].total) rank = i + 1;
+      p.rank = rank;
+    });
+
     // Collect all days that have any points, sorted chronologically
     var daySet = {};
     scored.forEach(function(p) {
@@ -1755,15 +1825,16 @@ function loadAndRenderLeaderboard() {
 
     // Rows
     scored.forEach(function(p, i) {
-      var rowBg = i === 0 ? 'rgba(255,214,0,0.04)' : (i%2===0 ? 'rgba(255,255,255,0.02)' : 'transparent');
-      var rankColor = i===0?'var(--gold)':(i===1?'#c0c0c0':(i===2?'#cd7f32':'var(--muted)'));
+      var r = p.rank;
+      var rowBg = r === 1 ? 'rgba(255,214,0,0.04)' : (i%2===0 ? 'rgba(255,255,255,0.02)' : 'transparent');
+      var rankColor = r===1?'var(--gold)':(r===2?'#c0c0c0':(r===3?'#cd7f32':'var(--muted)'));
 
       html += '<tr style="background:'+rowBg+';border-bottom:0.5px solid var(--border);">';
 
       // Name — sticky, with champion flag
       var champFlag = p.champion !== '—' ? ' <span style="font-size:0.85rem;" title="'+p.champion+'">'+p.champion.split(' ')[0]+'</span>' : '';
       html += '<td style="padding:11px 10px;font-weight:600;white-space:nowrap;position:sticky;left:0;background:'+rowBg+';z-index:1;">'+
-        '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1rem;color:'+rankColor+';margin-right:6px;">'+(medals[i]||(i+1))+'</span>'+
+        '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1rem;color:'+rankColor+';margin-right:6px;">'+(medals[r-1]||r)+'</span>'+
         p.name+champFlag+'</td>';
 
       // Day columns
@@ -1777,7 +1848,7 @@ function loadAndRenderLeaderboard() {
 
       // Total
       html += '<td style="padding:11px 10px;text-align:right;">'+
-        '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.5rem;color:'+(i===0?'var(--gold)':'var(--green)')+';">'+p.total+'</span>'+
+        '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.5rem;color:'+(r===1?'var(--gold)':'var(--green)')+';">'+p.total+'</span>'+
         '<span style="font-size:0.75rem;color:var(--muted);margin-left:3px;">pts</span></td>';
 
       html += '</tr>';
