@@ -1893,7 +1893,7 @@ function renderBumpChart(scored, allDays) {
   });
 
   // Compute rank per day (competition ranking — ties share rank)
-  var rankByPlayerByDay = {}; // name -> [rank per day]
+  var rankByPlayerByDay = {};
   scored.forEach(function(p){ rankByPlayerByDay[p.name] = []; });
 
   allDays.forEach(function(day, di) {
@@ -1912,68 +1912,121 @@ function renderBumpChart(scored, allDays) {
   var numDays = allDays.length;
 
   // SVG layout
-  var leftLabelW = 92, rightLabelW = 92;
+  var leftLabelW = 16, rightLabelW = 92;
   var rowH = 22;
   var chartH = Math.max(numPlayers * rowH, 200);
   var colW = numDays > 1 ? Math.max(46, Math.min(64, 600 / numDays)) : 200;
   var chartW = (numDays - 1) * colW;
   var svgW = leftLabelW + chartW + rightLabelW;
-  var svgH = chartH + 20;
+  var svgH = chartH + 40;
 
-  // Distinct colors for lines, cycling through a palette
   var palette = ['#00c853','#ffd600','#4fc3f7','#ff3d3d','#ba68c8','#ff8a65','#26c6da','#9ccc65',
                   '#f06292','#7986cb','#aed581','#4db6ac','#ffb74d','#90a4ae','#e57373','#64b5f6',
                   '#dce775','#a1887f','#4dd0e1','#f48fb1','#81c784','#fff176','#ce93d8'];
 
   function yForRank(r) { return 10 + (r - 0.5) * (chartH / numPlayers); }
   function xForDay(i) { return leftLabelW + i * colW; }
+  function slugName(s) { return s.replace(/[^a-zA-Z0-9]/g,''); }
 
-  var svg = '<svg viewBox="0 0 '+svgW+' '+svgH+'" width="100%" style="min-width:'+svgW+'px;display:block;">';
+  var svg = '<svg id="bump-svg" viewBox="0 0 '+svgW+' '+svgH+'" width="100%" style="min-width:'+svgW+'px;display:block;">';
 
-  // Day labels (rotated, abbreviated) along the bottom — only show every Nth if crowded
+  // Day labels along the bottom
   var labelEvery = numDays > 18 ? 2 : 1;
   allDays.forEach(function(day, i) {
     if(i % labelEvery !== 0 && i !== numDays-1) return;
-    var shortLabel = day.split(' ')[0]; // just the day number
+    var shortLabel = day.split(' ')[0];
     svg += '<text x="'+xForDay(i)+'" y="'+(svgH-4)+'" font-size="9" fill="#5a7a60" text-anchor="middle" font-family="Barlow">'+shortLabel+'</text>';
   });
 
-  // Lines per player
+  // Build smooth path using cubic bezier between points (classic bump-chart curve)
+  function smoothPath(points) {
+    if(points.length === 1) return 'M'+points[0].x+','+points[0].y;
+    var d = 'M'+points[0].x+','+points[0].y+' ';
+    for(var i = 0; i < points.length - 1; i++) {
+      var p0 = points[i], p1 = points[i+1];
+      var midX = (p0.x + p1.x) / 2;
+      d += 'C'+midX+','+p0.y+' '+midX+','+p1.y+' '+p1.x+','+p1.y+' ';
+    }
+    return d;
+  }
+
+  // Lines per player — grouped so we can fade/highlight via CSS class toggling
   scored.forEach(function(p, idx) {
     var color = palette[idx % palette.length];
     var ranks = rankByPlayerByDay[p.name];
-    var pathD = '';
-    ranks.forEach(function(r, i) {
-      var x = xForDay(i), y = yForRank(r);
-      pathD += (i===0?'M':'L')+x+','+y+' ';
+    var points = ranks.map(function(r, i){ return {x: xForDay(i), y: yForRank(r)}; });
+    var pathD = smoothPath(points);
+    var cls = 'bump-line bump-'+slugName(p.name);
+
+    svg += '<g class="'+cls+'" data-player="'+slugName(p.name)+'">';
+    svg += '<path d="'+pathD+'" fill="none" stroke="'+color+'" stroke-width="2.5" class="bump-path"/>';
+    points.forEach(function(pt) {
+      svg += '<circle cx="'+pt.x+'" cy="'+pt.y+'" r="2.5" fill="'+color+'" class="bump-dot"/>';
     });
-    svg += '<path d="'+pathD+'" fill="none" stroke="'+color+'" stroke-width="2" opacity="0.85"/>';
-    // Dots at each day
-    ranks.forEach(function(r, i) {
-      svg += '<circle cx="'+xForDay(i)+'" cy="'+yForRank(r)+'" r="2.5" fill="'+color+'"/>';
-    });
+    svg += '</g>';
   });
 
-  // Left labels — starting rank order
-  scored.forEach(function(p, idx) {
-    var color = palette[idx % palette.length];
-    var startRank = rankByPlayerByDay[p.name][0];
-    var y = yForRank(startRank);
-    svg += '<text x="'+(leftLabelW-8)+'" y="'+(y+3.5)+'" font-size="10" fill="'+color+'" text-anchor="end" font-family="Barlow" font-weight="600">'+p.name+'</text>';
-  });
+  // Helper: spread label y-positions to avoid overlap when ranks are tied
+  function layoutLabels(items) {
+    var minGap = 13;
+    var sorted = items.slice().sort(function(a,b){ return a.rank - b.rank; });
+    var ys = sorted.map(function(it){ return yForRank(it.rank); });
+    for(var i = 1; i < ys.length; i++) {
+      if(ys[i] - ys[i-1] < minGap) ys[i] = ys[i-1] + minGap;
+    }
+    for(var i = ys.length - 2; i >= 0; i--) {
+      if(ys[i+1] - ys[i] < minGap) ys[i] = ys[i+1] - minGap;
+    }
+    sorted.forEach(function(it, i){ it.labelY = ys[i]; });
+    return sorted;
+  }
 
-  // Right labels — final rank order
-  scored.forEach(function(p, idx) {
-    var color = palette[idx % palette.length];
+  // Right labels — final rank order, clickable to toggle highlight
+  var rightItems = scored.map(function(p, idx) {
     var ranks = rankByPlayerByDay[p.name];
-    var endRank = ranks[ranks.length-1];
-    var y = yForRank(endRank);
-    svg += '<text x="'+(leftLabelW+chartW+8)+'" y="'+(y+3.5)+'" font-size="10" fill="'+color+'" text-anchor="start" font-family="Barlow" font-weight="600">'+p.name+'</text>';
+    return {name: p.name, rank: ranks[ranks.length-1], color: palette[idx % palette.length]};
+  });
+  layoutLabels(rightItems).forEach(function(it) {
+    var slug = slugName(it.name);
+    svg += '<text x="'+(leftLabelW+chartW+8)+'" y="'+(it.labelY+3.5)+'" font-size="10" fill="'+it.color+
+      '" text-anchor="start" font-family="Barlow" font-weight="600" class="bump-label bump-label-'+slug+
+      '" data-player="'+slug+'" style="cursor:pointer;">'+it.name+'</text>';
   });
 
   svg += '</svg>';
 
-  bumpCont.innerHTML = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:8px 0;">'+svg+'</div>';
+  bumpCont.innerHTML =
+    '<style>'+
+    '.bump-line{opacity:0.35;transition:opacity 0.2s;}'+
+    '.bump-line .bump-path{stroke-width:2.5px;}'+
+    '.bump-label{opacity:0.55;transition:opacity 0.2s;}'+
+    '#bump-chart-content.has-selection .bump-line{opacity:0.12;}'+
+    '#bump-chart-content.has-selection .bump-label{opacity:0.3;}'+
+    '#bump-chart-content.has-selection .bump-line.bump-active{opacity:1;}'+
+    '#bump-chart-content.has-selection .bump-line.bump-active .bump-path{stroke-width:3.5px;}'+
+    '#bump-chart-content.has-selection .bump-label.bump-active{opacity:1;font-weight:700;}'+
+    '</style>'+
+    '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:8px 0;">'+svg+'</div>'+
+    '<p style="color:var(--muted);font-size:0.72rem;text-align:center;margin-top:4px;">👆 Toca un nombre para resaltar su línea</p>';
+
+  // Wire up click-to-highlight on labels
+  var selected = null;
+  bumpCont.querySelectorAll('.bump-label').forEach(function(label) {
+    label.addEventListener('click', function() {
+      var slug = label.dataset.player;
+      if(selected === slug) {
+        // Deselect
+        selected = null;
+        bumpCont.classList.remove('has-selection');
+        bumpCont.querySelectorAll('.bump-active').forEach(function(el){ el.classList.remove('bump-active'); });
+      } else {
+        selected = slug;
+        bumpCont.classList.add('has-selection');
+        bumpCont.querySelectorAll('.bump-active').forEach(function(el){ el.classList.remove('bump-active'); });
+        bumpCont.querySelectorAll('.bump-'+slug).forEach(function(el){ el.classList.add('bump-active'); });
+      }
+    });
+  });
 }
 
 // ════════ START ════════
