@@ -899,7 +899,27 @@ var KICKOFF_UTC = {
 function isLocked(matchId) {
   var utc = KICKOFF_UTC[matchId];
   if(!utc) return false;
-  return new Date() >= new Date(utc);
+  var match = MATCHES.find(function(m){ return m.id === matchId; });
+  var isGroupStage = match && match.group;
+
+  // Exception: June 23 and 24 (Hora CDMX) group matches lock at kickoff time, not 24h before
+  var kickoffMs = new Date(utc).getTime();
+  var cdtDate = new Date(kickoffMs - 6 * 60 * 60 * 1000); // Hora CDMX = UTC-6
+  var cdtDay = cdtDate.getUTCDate();
+  var cdtMonth = cdtDate.getUTCMonth(); // 5 = June
+  var isJune23or24 = (cdtMonth === 5 && (cdtDay === 23 || cdtDay === 24));
+
+  var lockOffsetMs;
+  if(!isGroupStage) {
+    lockOffsetMs = 2 * 60 * 60 * 1000; // knockout: 2h before
+  } else if(isJune23or24) {
+    lockOffsetMs = 0; // exception: lock at kickoff time
+  } else {
+    lockOffsetMs = 24 * 60 * 60 * 1000; // group stage default: 24h before
+  }
+
+  var lockTime = kickoffMs - lockOffsetMs;
+  return Date.now() >= lockTime;
 }
 
 function lockFields(div, matchId) {
@@ -914,7 +934,19 @@ function lockFields(div, matchId) {
     badge.style.background = 'rgba(255,61,61,0.1)';
     badge.style.borderColor = 'rgba(255,61,61,0.3)';
     badge.style.color = 'var(--red)';
-    badge.textContent = '🔒 Cerrado — partido en curso o finalizado';
+    var match = MATCHES.find(function(m){ return m.id === matchId; });
+    var isGroupStage = match && match.group;
+    var utc = KICKOFF_UTC[matchId];
+    var cdtDate = utc ? new Date(new Date(utc).getTime() - 6 * 60 * 60 * 1000) : null;
+    var isJune23or24 = cdtDate && cdtDate.getUTCMonth() === 5 && (cdtDate.getUTCDate() === 23 || cdtDate.getUTCDate() === 24);
+
+    if(!isGroupStage) {
+      badge.textContent = '🔒 Cerrado — menos de 2h para el inicio';
+    } else if(isJune23or24) {
+      badge.textContent = '🔒 Cerrado — partido en curso o finalizado';
+    } else {
+      badge.textContent = '🔒 Cerrado — menos de 24h para el inicio';
+    }
   }
 }
 
@@ -997,9 +1029,11 @@ function renderMatchCards(picks, results) {
         notes.push('❌ Resultado incorrecto');
       }
       var cls = matchPts > 0 ? 'scored' : 'missed';
+      var gd = matchGoalDiff(p, r);
+      var gdStr = gd !== null ? (gd === 0 ? '🎯 GD 0' : '📏 GD '+gd) : '';
       ptsHtml = '<div class="match-pts '+cls+'">'+
         '<span class="pts-total">'+matchPts+'pts</span>'+
-        '<span>'+notes.join(' · ')+'</span>'+
+        '<span>'+notes.join(' · ')+(gdStr?' · '+gdStr:'')+'</span>'+
       '</div>';
     }
 
@@ -1084,7 +1118,7 @@ function renderMatchCards(picks, results) {
   finDetails.className = 'section-accordion';
   var finSummary = document.createElement('summary');
   finSummary.className = 'section-summary';
-  finSummary.innerHTML = '✅ Partidos Finalizados <span class="section-count">('+finishedMatches.length+' partidos)</span>';
+  finSummary.innerHTML = '🔒 Partidos Cerrados <span class="section-count">('+finishedMatches.length+' partidos)</span>';
   finDetails.appendChild(finSummary);
   var finBody = document.createElement('div');
   finBody.className = 'section-body';
@@ -1706,6 +1740,33 @@ function matchFlags(m) {
   return ht.flag+' vs '+at.flag;
 }
 
+// ════════ GOAL DIFFERENCE ACCURACY ════════
+// Per match: |predicted_home - actual_home| + |predicted_away - actual_away|. Lower = more accurate. 0 = exact score.
+function matchGoalDiff(pick, result) {
+  if(!pick || !result || !result.winner) return null;
+  var ph = parseInt(pick.home)||0, pa = parseInt(pick.away)||0;
+  var rh = parseInt(result.home)||0, ra = parseInt(result.away)||0;
+  return Math.abs(ph - rh) + Math.abs(pa - ra);
+}
+
+// Cumulative goal-diff miss across all played group-stage matches, with per-match breakdown by day
+// Also tracks exact score count (diff === 0)
+function calcGoalDiffTotal(picks, results) {
+  var total = 0, byDay = {}, byMatch = {}, exactCount = 0;
+  MATCHES.filter(function(m){ return m.group; }).forEach(function(m) {
+    var r = results[m.id], p = picks.matches && picks.matches[m.id];
+    if(!r || !r.winner || !p || !p.winner) return;
+    var diff = matchGoalDiff(p, r);
+    if(diff === null) return;
+    total += diff;
+    if(diff === 0) exactCount++;
+    var day = cdtDateKey(m.id);
+    byDay[day] = (byDay[day]||0) + diff;
+    byMatch[m.id] = diff;
+  });
+  return {total: total, byDay: byDay, byMatch: byMatch, exactCount: exactCount};
+}
+
 function calcScore(picks, results) {
   var total=0, detail=[];
   MATCHES.filter(function(m){return m.group;}).forEach(function(m){
@@ -1773,10 +1834,11 @@ function loadAndRenderLeaderboard() {
     // Score everyone
     var scored = Object.values(allPicks).map(function(p) {
       var s = calcScore(p, results);
+      var gd = calcGoalDiffTotal(p, results);
       var championKey = p.champion || '';
       var championTeam = championKey ? (TEAM_DATA[championKey] || {flag:'🏳️', name:championKey}) : null;
       var championStr = championTeam ? championTeam.flag+' '+championTeam.name : '—';
-      return {name: p.name||'?', total: s.total, detail: s.detail, champion: championStr};
+      return {name: p.name||'?', total: s.total, detail: s.detail, champion: championStr, gdTotal: gd.total, exactCount: gd.exactCount};
     }).sort(function(a,b){ return b.total - a.total; });
 
     // Assign competition rank — ties share the same position, next rank skips ahead
@@ -1830,6 +1892,8 @@ function loadAndRenderLeaderboard() {
       html += '<th style="padding:8px 6px;text-align:center;font-size:0.68rem;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;min-width:52px;">'+label+'</th>';
     });
     html += '<th style="padding:8px 10px;text-align:right;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:700;white-space:nowrap;">Total</th>';
+    html += '<th style="padding:8px 10px;text-align:right;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;" title="Marcadores exactos en el torneo">🎯 Exactos</th>';
+    html += '<th style="padding:8px 10px;text-align:right;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;" title="Diferencia de goles acumulada — menor es mejor">📏 GD</th>';
     html += '</tr></thead><tbody>';
 
     // Rows
@@ -1859,6 +1923,9 @@ function loadAndRenderLeaderboard() {
       html += '<td style="padding:11px 10px;text-align:right;">'+
         '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.5rem;color:'+(r===1?'var(--gold)':'var(--green)')+';">'+p.total+'</span>'+
         '<span style="font-size:0.75rem;color:var(--muted);margin-left:3px;">pts</span></td>';
+
+      html += '<td style="padding:11px 10px;text-align:right;color:var(--green);font-size:0.85rem;font-weight:700;white-space:nowrap;">'+p.exactCount+'</td>';
+      html += '<td style="padding:11px 10px;text-align:right;color:var(--muted);font-size:0.85rem;white-space:nowrap;">'+p.gdTotal+'</td>';
 
       html += '</tr>';
     });
