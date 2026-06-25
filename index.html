@@ -1816,12 +1816,19 @@ function calcScore(picks, results) {
     var lastMatch = gm[gm.length-1];
     var day = cdtDateKey(lastMatch.id);
     var actual=simGroup(g,results,true), player=simGroup(g,picks,false);
+    var groupPts = 0, qualFlags = [];
     [player[0],player[1]].forEach(function(t){
       if(actual[0]===t||actual[1]===t){
-        total+=4; detail.push({pts:4,note:'🔵 '+td(t).flag+' '+td(t).name+' clasifica Grp '+g,day:day,matchId:lastMatch.id});
-        if(t===player[0]&&t===actual[0]){total+=2;detail.push({pts:2,note:'🥇 '+td(t).flag+' '+td(t).name+' 1.º',day:day,matchId:lastMatch.id});}
+        groupPts += 4;
+        var isWinner = (t===player[0]&&t===actual[0]);
+        qualFlags.push(td(t).flag+(isWinner?'🥇':''));
+        if(isWinner) groupPts += 2;
       }
     });
+    if(groupPts > 0){
+      total += groupPts;
+      detail.push({pts:groupPts, note:'🔵 Grupo '+g+' '+qualFlags.join(' ')+' +'+groupPts, day:day, matchId:lastMatch.id});
+    }
   });
   MATCHES.filter(function(m){return !m.group;}).forEach(function(m){
     var r=results[m.id], p=picks.matches&&picks.matches[m.id];
