@@ -349,6 +349,11 @@ function simpleScore(picks, results) {
     <p style="color:var(--muted);font-size:0.82rem;margin-bottom:4px;">La posición de cada jugador día a día. Desliza para ver el torneo completo.</p>
     <div id="bump-chart-content"></div>
   </div>
+  <div class="card">
+    <h2>🔵 Clasificados por Grupo</h2>
+    <p style="color:var(--muted);font-size:0.82rem;margin-bottom:4px;">Quién predijo correctamente los clasificados de cada grupo. Desliza para ver todos los grupos.</p>
+    <div id="qual-comparison-content"></div>
+  </div>
   <button class="btn btn-outline" id="refresh-lb-btn" style="width:100%;">🔄 Actualizar</button>
 </div>
 
@@ -1197,6 +1202,36 @@ function renderMatchCards(picks, results) {
     cont.appendChild(upDetails);
     renderMatchList(sortByView(upcomingMatches), upBody);
   }
+
+  // ═══ SECTION: Puntos de Clasificación de Grupos (collapsed by default) ═══
+  var qualScore = calcScore(picks, results);
+  var qualDetail = qualScore.detail.filter(function(d){ return d.note.indexOf('🔵') === 0; });
+  var qualTotal = qualDetail.reduce(function(sum, d){ return sum + d.pts; }, 0);
+
+  var qualDetails = document.createElement('details');
+  qualDetails.className = 'section-accordion';
+  var qualSummary = document.createElement('summary');
+  qualSummary.className = 'section-summary';
+  qualSummary.innerHTML = '🔵 Puntos de Clasificación de Grupos <span class="section-count">('+qualTotal+' pts)</span>';
+  qualDetails.appendChild(qualSummary);
+  var qualBody = document.createElement('div');
+  qualBody.className = 'section-body';
+  qualDetails.appendChild(qualBody);
+  cont.appendChild(qualDetails);
+
+  var qualCard = document.createElement('div'); qualCard.className = 'card';
+  if(qualDetail.length === 0) {
+    qualCard.innerHTML = '<p style="color:var(--muted);font-size:0.88rem;margin:0;">Aún no se han otorgado puntos de clasificación. Se calculan automáticamente cuando un grupo completo termina su fase de grupos.</p>';
+  } else {
+    var rows = qualDetail.map(function(d) {
+      return '<div class="match-pts scored" style="margin-top:0;margin-bottom:10px;">'+
+        '<span class="pts-total">+'+d.pts+'</span>'+
+        '<span>'+d.note.replace('🔵 ','')+'</span>'+
+      '</div>';
+    }).join('');
+    qualCard.innerHTML = rows + '<p style="color:var(--muted);font-size:0.78rem;margin:8px 0 0;">Total: <strong style="color:var(--green);">'+qualTotal+' pts</strong> de clasificación de grupos.</p>';
+  }
+  qualBody.appendChild(qualCard);
 
   // ═══ SECTION 3: Fase Eliminatoria (collapsed by default) ═══
   var koMatches = MATCHES.filter(function(m){ return !m.group; });
@@ -2049,6 +2084,9 @@ function loadAndRenderLeaderboard() {
 
     // ═══ BUMP CHART — rank evolution over the full tournament ═══
     renderBumpChart(scored, allDays);
+
+    // ═══ GROUP QUALIFICATION COMPARISON ═══
+    renderQualComparison(allPicks, results);
   });
 }
 
@@ -2202,6 +2240,80 @@ function renderBumpChart(scored, allDays) {
       }
     });
   });
+}
+
+function renderQualComparison(allPicks, results) {
+  var cont = document.getElementById('qual-comparison-content');
+  if(!cont) return;
+
+  var groupKeys = Object.keys(GROUPS);
+  var players = Object.values(allPicks);
+  if(!players.length) { cont.innerHTML = ''; return; }
+
+  // Determine actual qualifiers per group (null if group not yet complete)
+  var actualByGroup = {};
+  groupKeys.forEach(function(g) {
+    var gm = MATCHES.filter(function(m){ return m.group === g; });
+    var complete = gm.every(function(m){ return results[m.id] && results[m.id].winner; });
+    actualByGroup[g] = complete ? simGroup(g, results, true).slice(0,2) : null;
+  });
+
+  // Build table: rows = players, columns = groups, cell = predicted top 2 + match indicator
+  var html = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:0.78rem;min-width:640px;">';
+
+  // Header row
+  html += '<thead><tr style="border-bottom:2px solid var(--border);">';
+  html += '<th style="padding:7px 8px;text-align:left;font-size:0.66rem;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);font-weight:700;position:sticky;left:0;background:var(--panel);z-index:1;">Jugador</th>';
+  groupKeys.forEach(function(g) {
+    html += '<th style="padding:7px 6px;text-align:center;font-size:0.7rem;color:var(--gold);font-weight:700;white-space:nowrap;min-width:78px;">Grupo '+g+'</th>';
+  });
+  html += '</tr>';
+
+  // Actual qualifiers row
+  html += '<tr style="border-bottom:2px solid var(--border);background:rgba(255,214,0,0.06);">';
+  html += '<td style="padding:7px 8px;font-weight:700;color:var(--gold);white-space:nowrap;position:sticky;left:0;background:rgba(255,214,0,0.06);z-index:1;">✅ Real</td>';
+  groupKeys.forEach(function(g) {
+    var actual = actualByGroup[g];
+    var cellStr = actual ? actual.map(function(t){ return td(t).flag; }).join(' ') : '<span style="color:var(--muted);">⏳</span>';
+    html += '<td style="padding:7px 6px;text-align:center;white-space:nowrap;">'+cellStr+'</td>';
+  });
+  html += '</tr></thead><tbody>';
+
+  // Per-player rows
+  players.forEach(function(p, i) {
+    var name = p.name || '?';
+    var rowBg = i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+    html += '<tr style="border-bottom:0.5px solid var(--border);background:'+rowBg+';">';
+    html += '<td style="padding:7px 8px;font-weight:600;white-space:nowrap;position:sticky;left:0;background:'+rowBg+';z-index:1;">'+name+'</td>';
+
+    groupKeys.forEach(function(g) {
+      var actual = actualByGroup[g];
+      var predicted = simGroup(g, p, false).slice(0,2);
+      var cellHtml;
+
+      if(!actual) {
+        cellHtml = predicted.map(function(t){ return td(t).flag; }).join(' ');
+        cellHtml = '<span style="opacity:0.6;">'+cellHtml+'</span>';
+      } else {
+        cellHtml = predicted.map(function(t, idx) {
+          var exact = actual[idx] === t;
+          var qualifies = actual.indexOf(t) > -1;
+          var flag = td(t).flag;
+          if(exact) return '<span style="color:var(--green);">'+flag+'🥇</span>';
+          if(qualifies) return '<span style="color:var(--green);">'+flag+'</span>';
+          return '<span style="color:var(--red);opacity:0.7;">'+flag+'</span>';
+        }).join(' ');
+      }
+      html += '<td style="padding:7px 6px;text-align:center;white-space:nowrap;">'+cellHtml+'</td>';
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  html += '<p style="color:var(--muted);font-size:0.72rem;margin-top:8px;">🟢 Clasifica · 🥇 Posición exacta · 🔴 No clasifica · ⏳ Grupo en curso</p>';
+
+  cont.innerHTML = html;
 }
 
 // ════════ START ════════
