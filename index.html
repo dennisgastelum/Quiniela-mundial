@@ -1899,7 +1899,7 @@ function calcGoalDiffTotal(picks, results) {
 }
 
 function calcScore(picks, results) {
-  var total=0, detail=[];
+  var total=0, detail=[], winnersCorrect=0;
   MATCHES.filter(function(m){return m.group;}).forEach(function(m){
     var r=results[m.id], p=picks.matches&&picks.matches[m.id];
     if(!r||!r.winner||!p||!p.winner) return;
@@ -1908,6 +1908,7 @@ function calcScore(picks, results) {
     if(p.winner===r.winner){
       var exact = String(p.home||'0')===String(r.home||'0')&&String(p.away||'0')===String(r.away||'0');
       total += 2;
+      winnersCorrect++;
       if(exact) total += 3;
       var note = flags+' +2'+(exact?' 🎯 +3':'');
       detail.push({pts: exact?5:2, note:note, day:day, matchId:m.id});
@@ -1941,7 +1942,7 @@ function calcScore(picks, results) {
     var pts=ROUND_PTS[m.round]||8;
     var bonus=METHOD_BONUS[m.round]||0;
     var winnerCorrect = p.winner && p.winner===r.winner;
-    if(winnerCorrect){total+=pts;detail.push({pts:pts,note:'✅ '+flags+' (+'+pts+')',day:day,matchId:m.id});}
+    if(winnerCorrect){total+=pts;winnersCorrect++;detail.push({pts:pts,note:'✅ '+flags+' (+'+pts+')',day:day,matchId:m.id});}
     // Method bonus: awarded whenever the method matches the actual result,
     // EXCEPT when the winner pick was wrong AND the method picked was "90 minutos".
     var methodMatches = p.method && r.method && p.method===r.method;
@@ -1950,7 +1951,7 @@ function calcScore(picks, results) {
   });
   var champ=localStorage.getItem('wc_champion');
   if(champ&&picks.champion===champ){total+=30;detail.push({pts:30,note:'👑 Campeón',day:'Campeón',matchId:null});}
-  return {total:total,detail:detail};
+  return {total:total,detail:detail,winnersCorrect:winnersCorrect};
 }
 
 // ════════ LEADERBOARD ════════
@@ -1981,7 +1982,7 @@ function loadAndRenderLeaderboard() {
       var championKey = p.champion || '';
       var championTeam = championKey ? (TEAM_DATA[championKey] || {flag:'🏳️', name:championKey}) : null;
       var championStr = championTeam ? championTeam.flag+' '+championTeam.name : '—';
-      return {name: p.name||'?', total: s.total, detail: s.detail, champion: championStr, gdTotal: gd.total, exactCount: gd.exactCount};
+      return {name: p.name||'?', total: s.total, detail: s.detail, champion: championStr, gdTotal: gd.total, exactCount: gd.exactCount, winnersCorrect: s.winnersCorrect};
     }).sort(function(a,b){ return b.total - a.total; });
 
     // Assign competition rank — ties share the same position, next rank skips ahead
@@ -2044,6 +2045,7 @@ function loadAndRenderLeaderboard() {
       html += '<th style="padding:8px 6px;text-align:center;font-size:0.68rem;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;min-width:'+minW+';">'+label+'</th>';
     });
     html += '<th style="padding:8px 10px;text-align:right;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:700;white-space:nowrap;">Total</th>';
+    html += '<th style="padding:8px 4px;text-align:center;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;width:50px;" title="Ganadores correctos en el torneo">✅</th>';
     html += '<th style="padding:8px 4px;text-align:center;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;width:50px;" title="Marcadores exactos en el torneo">🎯</th>';
     html += '<th style="padding:8px 10px;text-align:right;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;" title="Diferencia de goles acumulada — menor es mejor">📏 GD</th>';
     html += '</tr></thead><tbody>';
@@ -2090,6 +2092,7 @@ function loadAndRenderLeaderboard() {
         '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.5rem;color:'+(r===1?'var(--gold)':'var(--green)')+';">'+p.total+'</span>'+
         '<span style="font-size:0.75rem;color:var(--muted);margin-left:3px;">pts</span></td>';
 
+      html += '<td style="padding:11px 4px;text-align:center;color:var(--green);font-size:0.85rem;font-weight:700;white-space:nowrap;width:50px;">'+p.winnersCorrect+'</td>';
       html += '<td style="padding:11px 4px;text-align:center;color:var(--green);font-size:0.85rem;font-weight:700;white-space:nowrap;width:50px;">'+p.exactCount+'</td>';
       html += '<td style="padding:11px 10px;text-align:right;color:var(--muted);font-size:0.85rem;white-space:nowrap;">'+p.gdTotal+'</td>';
 
