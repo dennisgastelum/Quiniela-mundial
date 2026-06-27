@@ -2012,12 +2012,20 @@ function loadAndRenderLeaderboard() {
     var normalDays = allDays.filter(function(d){ return d !== 'Campeón'; });
     var visibleDays = normalDays.slice(-7).concat(champDay);
 
-    // Build points-by-day per player
+    // Build points-by-day per player, splitting match pts vs qualification pts for June 24-27
+    var splitDays = ['24 Jun','25 Jun','26 Jun','27 Jun'];
     scored.forEach(function(p) {
       p.byDay = {};
+      p.byDayMatch = {};
+      p.byDayQual = {};
       p.detail.forEach(function(d) {
         if(!d.day) return;
         p.byDay[d.day] = (p.byDay[d.day] || 0) + d.pts;
+        if(splitDays.indexOf(d.day) > -1) {
+          var isQual = d.note.indexOf('🔵') === 0;
+          if(isQual) p.byDayQual[d.day] = (p.byDayQual[d.day] || 0) + d.pts;
+          else p.byDayMatch[d.day] = (p.byDayMatch[d.day] || 0) + d.pts;
+        }
       });
     });
 
@@ -2032,7 +2040,8 @@ function loadAndRenderLeaderboard() {
     html += '<th style="padding:8px 10px;text-align:left;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;position:sticky;left:0;background:var(--panel);z-index:1;">Jugador</th>';
     visibleDays.forEach(function(day) {
       var label = day === 'Campeón' ? '👑' : day;
-      html += '<th style="padding:8px 6px;text-align:center;font-size:0.68rem;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;min-width:52px;">'+label+'</th>';
+      var minW = splitDays.indexOf(day) > -1 ? '64px' : '52px';
+      html += '<th style="padding:8px 6px;text-align:center;font-size:0.68rem;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;min-width:'+minW+';">'+label+'</th>';
     });
     html += '<th style="padding:8px 10px;text-align:right;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:700;white-space:nowrap;">Total</th>';
     html += '<th style="padding:8px 10px;text-align:right;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;" title="Marcadores exactos en el torneo">🎯 Exactos</th>';
@@ -2056,11 +2065,24 @@ function loadAndRenderLeaderboard() {
 
       // Day columns
       visibleDays.forEach(function(day) {
-        var pts = p.byDay[day] || 0;
-        var color = pts > 0 ? 'var(--green)' : 'var(--muted)';
-        var weight = pts > 0 ? '700' : '400';
-        var display = pts > 0 ? '+'+pts : '—';
-        html += '<td style="padding:11px 6px;text-align:center;color:'+color+';font-weight:'+weight+';font-family:\'Bebas Neue\',sans-serif;font-size:1rem;">'+display+'</td>';
+        var isSplitDay = splitDays.indexOf(day) > -1;
+        if(isSplitDay) {
+          var matchPts = p.byDayMatch[day] || 0;
+          var qualPts = p.byDayQual[day] || 0;
+          if(matchPts === 0 && qualPts === 0) {
+            html += '<td style="padding:11px 6px;text-align:center;color:var(--muted);font-family:\'Bebas Neue\',sans-serif;font-size:1rem;">—</td>';
+          } else {
+            var matchStr = matchPts > 0 ? '<span style="color:var(--green);">⚽+'+matchPts+'</span>' : '<span style="color:var(--muted);">⚽ —</span>';
+            var qualStr = qualPts > 0 ? '<span style="color:var(--blue);">🔵+'+qualPts+'</span>' : '<span style="color:var(--muted);">🔵 —</span>';
+            html += '<td style="padding:7px 4px;text-align:center;font-family:\'Bebas Neue\',sans-serif;font-size:0.78rem;line-height:1.5;">'+matchStr+'<br>'+qualStr+'</td>';
+          }
+        } else {
+          var pts = p.byDay[day] || 0;
+          var color = pts > 0 ? 'var(--green)' : 'var(--muted)';
+          var weight = pts > 0 ? '700' : '400';
+          var display = pts > 0 ? '+'+pts : '—';
+          html += '<td style="padding:11px 6px;text-align:center;color:'+color+';font-weight:'+weight+';font-family:\'Bebas Neue\',sans-serif;font-size:1rem;">'+display+'</td>';
+        }
       });
 
       // Total
