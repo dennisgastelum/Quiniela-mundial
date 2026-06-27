@@ -159,10 +159,12 @@
       <div class="score-row"><div>⏱️ Bonus método Cuartos de Final — 90 minutos o tiempo extra/penaltis <em style="color:var(--muted);font-weight:400">— 4 partidos</em></div><div>+6</div><div style="text-align:center;font-weight:700;color:var(--muted);">24</div></div>
       <div class="score-row"><div>💥 Ganador correcto en Semifinal <em style="color:var(--muted);font-weight:400">— 2 partidos</em></div><div>18</div><div style="text-align:center;font-weight:700;color:var(--muted);">36</div></div>
       <div class="score-row"><div>⏱️ Bonus método Semifinal — 90 minutos o tiempo extra/penaltis <em style="color:var(--muted);font-weight:400">— 2 partidos</em></div><div>+9</div><div style="text-align:center;font-weight:700;color:var(--muted);">18</div></div>
+      <div class="score-row"><div>🥉 Ganador correcto del Tercer Lugar <em style="color:var(--muted);font-weight:400">— 1 partido</em></div><div>20</div><div style="text-align:center;font-weight:700;color:var(--muted);">20</div></div>
+      <div class="score-row"><div>⏱️ Bonus método Tercer Lugar — 90 minutos o tiempo extra/penaltis <em style="color:var(--muted);font-weight:400">— 1 partido</em></div><div>+10</div><div style="text-align:center;font-weight:700;color:var(--muted);">10</div></div>
       <div class="score-row"><div>🏆 Ganador correcto de la Final <em style="color:var(--muted);font-weight:400">— 1 partido</em></div><div>25</div><div style="text-align:center;font-weight:700;color:var(--muted);">25</div></div>
       <div class="score-row"><div>⏱️ Bonus método Final — 90 minutos o tiempo extra/penaltis <em style="color:var(--muted);font-weight:400">— 1 partido</em></div><div>+12</div><div style="text-align:center;font-weight:700;color:var(--muted);">12</div></div>
       <div class="score-row"><div>👑 Campeón del torneo — pronóstico previo al torneo</div><div>30</div><div style="text-align:center;font-weight:700;color:var(--muted);">30</div></div>
-      <div class="score-row" style="background:rgba(255,214,0,0.05);"><div><strong style="color:var(--gold)">🏅 Total máximo posible</strong></div><div></div><div style="text-align:center;font-weight:700;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.2rem;">925</div></div>
+      <div class="score-row" style="background:rgba(255,214,0,0.05);"><div><strong style="color:var(--gold)">🏅 Total máximo posible</strong></div><div></div><div style="text-align:center;font-weight:700;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.2rem;">955</div></div>
     </div>
   </div>
   <div class="card">
@@ -616,10 +618,11 @@ var MATCHES = [
   {id:"QFd",round:"Cuartos de Final",home:"TBD",away:"TBD"},
   {id:"SF1",round:"Semifinal",home:"TBD",away:"TBD"},
   {id:"SF2",round:"Semifinal",home:"TBD",away:"TBD"},
+  {id:"TP",round:"Tercer Lugar",home:"TBD",away:"TBD"},
   {id:"FIN",round:"Final",home:"TBD",away:"TBD"}
 ];
-var ROUND_PTS = {"Ronda de 32":8,"Octavos de Final":10,"Cuartos de Final":12,"Semifinal":18,"Final":25};
-var METHOD_BONUS = {"Ronda de 32":4,"Octavos de Final":5,"Cuartos de Final":6,"Semifinal":9,"Final":12};
+var ROUND_PTS = {"Ronda de 32":8,"Octavos de Final":10,"Cuartos de Final":12,"Semifinal":18,"Tercer Lugar":20,"Final":25};
+var METHOD_BONUS = {"Ronda de 32":4,"Octavos de Final":5,"Cuartos de Final":6,"Semifinal":9,"Tercer Lugar":10,"Final":12};
 
 // ════════ HELPERS ════════
 function td(key) { return TEAM_DATA[key] || {flag:"🏳️",rank:null,name:key}; }
@@ -1213,7 +1216,7 @@ function renderMatchCards(picks, results) {
   koWarn.innerHTML='<div class="info-box" style="margin-bottom:0;">Algunos partidos ya tienen equipos confirmados — puedes enviar tu pronóstico ya. Los que aún dicen "Por definir" se irán añadiendo a medida que se confirmen los equipos clasificados.</div>';
   koBody.appendChild(koWarn);
 
-  var koRounds = ['Ronda de 32','Octavos de Final','Cuartos de Final','Semifinal','Final'];
+  var koRounds = ['Ronda de 32','Octavos de Final','Cuartos de Final','Semifinal','Tercer Lugar','Final'];
   koRounds.forEach(function(round) {
     var roundMatches = koMatches.filter(function(m){ return m.round===round; });
     if(!roundMatches.length) return;
