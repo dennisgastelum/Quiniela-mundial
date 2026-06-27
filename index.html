@@ -2044,7 +2044,7 @@ function loadAndRenderLeaderboard() {
       html += '<th style="padding:8px 6px;text-align:center;font-size:0.68rem;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;min-width:'+minW+';">'+label+'</th>';
     });
     html += '<th style="padding:8px 10px;text-align:right;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:700;white-space:nowrap;">Total</th>';
-    html += '<th style="padding:8px 10px;text-align:right;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;" title="Marcadores exactos en el torneo">🎯 Exactos</th>';
+    html += '<th style="padding:8px 4px;text-align:center;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;width:50px;" title="Marcadores exactos en el torneo">🎯</th>';
     html += '<th style="padding:8px 10px;text-align:right;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;" title="Diferencia de goles acumulada — menor es mejor">📏 GD</th>';
     html += '</tr></thead><tbody>';
 
@@ -2090,7 +2090,7 @@ function loadAndRenderLeaderboard() {
         '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.5rem;color:'+(r===1?'var(--gold)':'var(--green)')+';">'+p.total+'</span>'+
         '<span style="font-size:0.75rem;color:var(--muted);margin-left:3px;">pts</span></td>';
 
-      html += '<td style="padding:11px 10px;text-align:right;color:var(--green);font-size:0.85rem;font-weight:700;white-space:nowrap;">'+p.exactCount+'</td>';
+      html += '<td style="padding:11px 4px;text-align:center;color:var(--green);font-size:0.85rem;font-weight:700;white-space:nowrap;width:50px;">'+p.exactCount+'</td>';
       html += '<td style="padding:11px 10px;text-align:right;color:var(--muted);font-size:0.85rem;white-space:nowrap;">'+p.gdTotal+'</td>';
 
       html += '</tr>';
