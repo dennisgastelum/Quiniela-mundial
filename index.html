@@ -584,14 +584,22 @@ var MATCHES = [
   {id:"L5",group:"L",round:"Grupo L",home:"Panama",away:"England",kickoff:"Sáb 27 Jun · 15:00 Hora CDMX",city:"New York/NJ"},
   {id:"L6",group:"L",round:"Grupo L",home:"Croatia",away:"Ghana",kickoff:"Sáb 27 Jun · 15:00 Hora CDMX",city:"Philadelphia"},
   // ── ELIMINATORIAS ──
-  {id:"R32a",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32b",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32c",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32d",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32e",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32f",round:"Ronda de 32",home:"TBD",away:"TBD"},
+  {id:"R32a",round:"Ronda de 32",home:"South Africa",away:"Canada",kickoff:"Dom 28 Jun · 13:00 Hora CDMX",city:"Los Angeles"},
+  {id:"R32b",round:"Ronda de 32",home:"Brazil",away:"Japan",kickoff:"Lun 29 Jun · 11:00 Hora CDMX",city:"Houston"},
+  {id:"R32c",round:"Ronda de 32",home:"Germany",away:"Paraguay",kickoff:"Lun 29 Jun · 14:30 Hora CDMX",city:"Boston"},
+  {id:"R32d",round:"Ronda de 32",home:"Netherlands",away:"Morocco",kickoff:"Lun 29 Jun · 19:00 Hora CDMX",city:"Monterrey"},
+  {id:"R32e",round:"Ronda de 32",home:"Ivory Coast",away:"Norway",kickoff:"Mar 30 Jun · 11:00 Hora CDMX",city:"Dallas"},
+  {id:"R32f",round:"Ronda de 32",home:"France",away:"Sweden",kickoff:"Mar 30 Jun · 15:00 Hora CDMX",city:"New York/NJ"},
   {id:"R32g",round:"Ronda de 32",home:"TBD",away:"TBD"},
   {id:"R32h",round:"Ronda de 32",home:"TBD",away:"TBD"},
+  {id:"R32i",round:"Ronda de 32",home:"USA",away:"Bosnia and Herzegovina",kickoff:"Mié 1 Jul · 18:00 Hora CDMX",city:"San Francisco"},
+  {id:"R32j",round:"Ronda de 32",home:"TBD",away:"TBD"},
+  {id:"R32k",round:"Ronda de 32",home:"TBD",away:"TBD"},
+  {id:"R32l",round:"Ronda de 32",home:"Australia",away:"Egypt",kickoff:"Vie 3 Jul · 12:00 Hora CDMX",city:"Dallas"},
+  {id:"R32m",round:"Ronda de 32",home:"Argentina",away:"Cape Verde",kickoff:"Vie 3 Jul · 16:00 Hora CDMX",city:"Miami"},
+  {id:"R32n",round:"Ronda de 32",home:"TBD",away:"TBD"},
+  {id:"R32o",round:"Ronda de 32",home:"TBD",away:"TBD"},
+  {id:"R32p",round:"Ronda de 32",home:"TBD",away:"TBD"},
   {id:"QFa",round:"Cuartos de Final",home:"TBD",away:"TBD"},
   {id:"QFb",round:"Cuartos de Final",home:"TBD",away:"TBD"},
   {id:"QFc",round:"Cuartos de Final",home:"TBD",away:"TBD"},
@@ -916,13 +924,25 @@ var KICKOFF_UTC = {
   "K5":"2026-06-27T23:30:00Z",
   "K6":"2026-06-27T23:30:00Z",
   "L5":"2026-06-27T21:00:00Z",
-  "L6":"2026-06-27T21:00:00Z"
+  "L6":"2026-06-27T21:00:00Z",
+  "R32a":"2026-06-28T19:00:00Z",
+  "R32b":"2026-06-29T17:00:00Z",
+  "R32c":"2026-06-29T20:30:00Z",
+  "R32d":"2026-06-30T01:00:00Z",
+  "R32e":"2026-06-30T17:00:00Z",
+  "R32f":"2026-06-30T21:00:00Z",
+  "R32i":"2026-07-02T00:00:00Z",
+  "R32l":"2026-07-03T18:00:00Z",
+  "R32m":"2026-07-03T22:00:00Z"
 };
 
 function isLocked(matchId) {
+  var match = MATCHES.find(function(m){ return m.id === matchId; });
+  // Lock any match where either team is still unconfirmed
+  if(match && (match.home === 'TBD' || match.away === 'TBD')) return true;
+
   var utc = KICKOFF_UTC[matchId];
   if(!utc) return false;
-  var match = MATCHES.find(function(m){ return m.id === matchId; });
   var isGroupStage = match && match.group;
 
   // Exception: June 23 and 24 (Hora CDMX) group matches lock at kickoff time, not 24h before
@@ -1149,19 +1169,21 @@ function renderMatchCards(picks, results) {
   cont.appendChild(finDetails);
   renderMatchList(sortByView(finishedMatches), finBody);
 
-  // ═══ SECTION 2: Fase de Grupos — Por Jugar (expanded by default) ═══
-  var upDetails = document.createElement('details');
-  upDetails.className = 'section-accordion';
-  upDetails.open = true;
-  var upSummary = document.createElement('summary');
-  upSummary.className = 'section-summary';
-  upSummary.innerHTML = '⚽ Fase de Grupos — Por Jugar <span class="section-count">('+upcomingMatches.length+' partidos)</span>';
-  upDetails.appendChild(upSummary);
-  var upBody = document.createElement('div');
-  upBody.className = 'section-body';
-  upDetails.appendChild(upBody);
-  cont.appendChild(upDetails);
-  renderMatchList(sortByView(upcomingMatches), upBody);
+  // ═══ SECTION 2: Fase de Grupos — Por Jugar (only shown if there are unlocked group matches) ═══
+  if(upcomingMatches.length > 0) {
+    var upDetails = document.createElement('details');
+    upDetails.className = 'section-accordion';
+    upDetails.open = true;
+    var upSummary = document.createElement('summary');
+    upSummary.className = 'section-summary';
+    upSummary.innerHTML = '⚽ Fase de Grupos — Por Jugar <span class="section-count">('+upcomingMatches.length+' partidos)</span>';
+    upDetails.appendChild(upSummary);
+    var upBody = document.createElement('div');
+    upBody.className = 'section-body';
+    upDetails.appendChild(upBody);
+    cont.appendChild(upDetails);
+    renderMatchList(sortByView(upcomingMatches), upBody);
+  }
 
   // ═══ SECTION 3: Fase Eliminatoria (collapsed by default) ═══
   var koMatches = MATCHES.filter(function(m){ return !m.group; });
@@ -1177,7 +1199,7 @@ function renderMatchCards(picks, results) {
   cont.appendChild(koDetails);
 
   var koWarn = document.createElement('div'); koWarn.className='card';
-  koWarn.innerHTML='<div class="warn-box" style="margin-bottom:0;">Los equipos se confirmarán al terminar la fase de grupos. Vuelve para añadir tus pronósticos.</div>';
+  koWarn.innerHTML='<div class="info-box" style="margin-bottom:0;">Algunos partidos ya tienen equipos confirmados — puedes enviar tu pronóstico ya. Los que aún dicen "Por definir" se irán añadiendo a medida que se confirmen los equipos clasificados.</div>';
   koBody.appendChild(koWarn);
 
   var koRounds = ['Ronda de 32','Cuartos de Final','Semifinal','Final'];
@@ -1193,8 +1215,27 @@ function renderMatchCards(picks, results) {
     roundMatches.forEach(function(m) {
       var ht=td(m.home), at=td(m.away);
       var div=document.createElement('div');
+
+      var kickoffHtml = '';
+      if(m.kickoff) {
+        var closeStr = '';
+        if(KICKOFF_UTC[m.id]) {
+          var closeMs = new Date(KICKOFF_UTC[m.id]).getTime() - 2*60*60*1000;
+          var closeCdt = new Date(closeMs - 6*60*60*1000);
+          var days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+          var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+          closeStr = days[closeCdt.getUTCDay()]+' '+closeCdt.getUTCDate()+' '+months[closeCdt.getUTCMonth()]+' · '+
+            String(closeCdt.getUTCHours()).padStart(2,'0')+':'+String(closeCdt.getUTCMinutes()).padStart(2,'0')+' Hora CDMX';
+        }
+        kickoffHtml = '<div class="kickoff-badge">🕐 '+m.kickoff+(m.city?' · 📍 '+m.city:'')+'</div>'+
+          (closeStr ? '<div class="warn-box" style="margin:0 0 10px;padding:8px 12px;font-size:0.76rem;">⚠️ Cierra 2h antes — '+closeStr+'</div>' : '');
+      } else if(m.home === 'TBD' || m.away === 'TBD') {
+        kickoffHtml = '<div class="warn-box" style="margin:0 0 10px;padding:8px 12px;font-size:0.76rem;">🔒 Cerrado — equipos aún por confirmar</div>';
+      }
+
       div.innerHTML=
         '<div class="match-label">'+m.id+'</div>'+
+        kickoffHtml+
         '<div class="match-teams">'+
           '<div class="team-block"><span class="team-flag">'+ht.flag+'</span><span class="team-name">'+ht.name+'</span></div>'+
           '<div class="vs">VS</div>'+
