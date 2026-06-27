@@ -340,7 +340,7 @@ function simpleScore(picks, results) {
 <!-- ══ CLASIFICACIÓN ══ -->
 <div id="tab-leaderboard" class="section">
   <div class="card">
-    <h2>🏆 Clasificación en Directo</h2>
+    <h2>🏆 Clasificación al momento</h2>
     <div id="lb-loading" class="info-box" style="display:none;">⏳ Cargando desde Google Sheets…</div>
     <div id="leaderboard-content"><p style="color:var(--muted);font-size:0.9rem;">Conecta Google Sheets en Configuración para ver la clasificación en directo.</p></div>
   </div>
@@ -2043,13 +2043,14 @@ function loadAndRenderLeaderboard() {
     scored.forEach(function(p, i) {
       var r = p.rank;
       var rowBg = r === 1 ? 'rgba(255,214,0,0.04)' : (i%2===0 ? 'rgba(255,255,255,0.02)' : 'transparent');
+      var stickyBg = r === 1 ? '#1a1605' : (i%2===0 ? '#13231a' : 'var(--panel)');
       var rankColor = r===1?'var(--gold)':(r===2?'#c0c0c0':(r===3?'#cd7f32':'var(--muted)'));
 
       html += '<tr style="background:'+rowBg+';border-bottom:0.5px solid var(--border);">';
 
       // Name — sticky, with champion flag
       var champFlag = p.champion !== '—' ? ' <span style="font-size:0.85rem;" title="'+p.champion+'">'+p.champion.split(' ')[0]+'</span>' : '';
-      html += '<td style="padding:11px 10px;font-weight:600;white-space:nowrap;position:sticky;left:0;background:'+rowBg+';z-index:1;">'+
+      html += '<td style="padding:11px 10px;font-weight:600;white-space:nowrap;position:sticky;left:0;background:'+stickyBg+';z-index:1;">'+
         '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1rem;color:'+rankColor+';margin-right:6px;">'+(medals[r-1]||r)+'</span>'+
         p.name+champFlag+'</td>';
 
@@ -2272,7 +2273,7 @@ function renderQualComparison(allPicks, results) {
 
   // Actual qualifiers row
   html += '<tr style="border-bottom:2px solid var(--border);background:rgba(255,214,0,0.06);">';
-  html += '<td style="padding:7px 8px;font-weight:700;color:var(--gold);white-space:nowrap;position:sticky;left:0;background:rgba(255,214,0,0.06);z-index:1;">✅ Real</td>';
+  html += '<td style="padding:7px 8px;font-weight:700;color:var(--gold);white-space:nowrap;position:sticky;left:0;background:#1a1605;z-index:1;">✅ Real</td>';
   groupKeys.forEach(function(g) {
     var actual = actualByGroup[g];
     var cellStr = actual ? actual.map(function(t){ return td(t).flag; }).join(' ') : '<span style="color:var(--muted);">⏳</span>';
@@ -2284,8 +2285,9 @@ function renderQualComparison(allPicks, results) {
   players.forEach(function(p, i) {
     var name = p.name || '?';
     var rowBg = i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+    var stickyBg = i % 2 === 0 ? '#13231a' : 'var(--panel)';
     html += '<tr style="border-bottom:0.5px solid var(--border);background:'+rowBg+';">';
-    html += '<td style="padding:7px 8px;font-weight:600;white-space:nowrap;position:sticky;left:0;background:'+rowBg+';z-index:1;">'+name+'</td>';
+    html += '<td style="padding:7px 8px;font-weight:600;white-space:nowrap;position:sticky;left:0;background:'+stickyBg+';z-index:1;">'+name+'</td>';
 
     groupKeys.forEach(function(g) {
       var actual = actualByGroup[g];
@@ -2297,12 +2299,15 @@ function renderQualComparison(allPicks, results) {
         cellHtml = '<span style="opacity:0.6;">'+cellHtml+'</span>';
       } else {
         cellHtml = predicted.map(function(t, idx) {
-          var exact = actual[idx] === t;
+          var exactFirst = idx === 0 && actual[0] === t;
+          var exactSecond = idx === 1 && actual[1] === t;
           var qualifies = actual.indexOf(t) > -1;
           var flag = td(t).flag;
-          if(exact) return '<span style="color:var(--green);">'+flag+'🥇</span>';
-          if(qualifies) return '<span style="color:var(--green);">'+flag+'</span>';
-          return '<span style="color:var(--red);opacity:0.7;">'+flag+'</span>';
+          if(exactFirst) return '<span style="position:relative;display:inline-block;">'+flag+'<span style="position:absolute;bottom:-3px;right:-5px;font-size:0.65em;">🥇</span></span>';
+          if(exactSecond) return '<span style="position:relative;display:inline-block;">'+flag+'<span style="position:absolute;bottom:-3px;right:-5px;font-size:0.65em;">🥈</span></span>';
+          if(qualifies) return flag;
+          // Missed pick — cover the flag with an X
+          return '<span style="position:relative;display:inline-block;opacity:0.5;">'+flag+'<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1em;color:var(--red);font-weight:900;">✕</span></span>';
         }).join(' ');
       }
       html += '<td style="padding:7px 6px;text-align:center;white-space:nowrap;">'+cellHtml+'</td>';
@@ -2311,7 +2316,7 @@ function renderQualComparison(allPicks, results) {
   });
 
   html += '</tbody></table></div>';
-  html += '<p style="color:var(--muted);font-size:0.72rem;margin-top:8px;">🟢 Clasifica · 🥇 Posición exacta · 🔴 No clasifica · ⏳ Grupo en curso</p>';
+  html += '<p style="color:var(--muted);font-size:0.72rem;margin-top:8px;">🥇 1.º exacto · 🥈 2.º exacto · ✕ no clasifica · ⏳ Grupo en curso</p>';
 
   cont.innerHTML = html;
 }
