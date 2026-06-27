@@ -1740,7 +1740,8 @@ function buildWhatsappMessage(day, results, allPicks, prevScores) {
 // ════════ SCORING ════════
 function simGroup(g, data, fromResults) {
   var teams=GROUPS[g], pts={}, gd={}, gs={};
-  teams.forEach(function(t){pts[t]=0;gd[t]=0;gs[t]=0;});
+  var h2hResults={}; // h2hResults[teamA][teamB] = points teamA got vs teamB (3/1/0)
+  teams.forEach(function(t){pts[t]=0;gd[t]=0;gs[t]=0;h2hResults[t]={};});
   MATCHES.filter(function(m){return m.group===g;}).forEach(function(m){
     var d=fromResults?data[m.id]:(data.matches&&data.matches[m.id]);
     if(!d) return;
@@ -1748,11 +1749,23 @@ function simGroup(g, data, fromResults) {
     var w=fromResults?d.winner:(h>a?m.home:h<a?m.away:'Draw');
     if(!w) return;
     gs[m.home]+=h; gs[m.away]+=a; gd[m.home]+=(h-a); gd[m.away]+=(a-h);
-    if(w===m.home) pts[m.home]+=3;
-    else if(w==='Draw'){pts[m.home]+=1;pts[m.away]+=1;}
-    else if(w===m.away) pts[m.away]+=3;
+    if(w===m.home) { pts[m.home]+=3; h2hResults[m.home][m.away]=3; h2hResults[m.away][m.home]=0; }
+    else if(w==='Draw'){ pts[m.home]+=1;pts[m.away]+=1; h2hResults[m.home][m.away]=1; h2hResults[m.away][m.home]=1; }
+    else if(w===m.away) { pts[m.away]+=3; h2hResults[m.away][m.home]=3; h2hResults[m.home][m.away]=0; }
   });
-  return teams.slice().sort(function(a,b){return (pts[b]-pts[a])||(gd[b]-gd[a])||(gs[b]-gs[a])||a.localeCompare(b);});
+
+  // Head-to-head comparator: only meaningful for a pair of teams with a played match between them.
+  // If pts differ, h2h doesn't apply (it's a fallback tiebreaker only for equal points).
+  function h2hCompare(a, b) {
+    if(pts[a] !== pts[b]) return 0; // not a tiebreaker situation, defer to points
+    var resA = h2hResults[a][b], resB = h2hResults[b][a];
+    if(resA === undefined || resB === undefined) return 0; // haven't played each other yet
+    return resB - resA; // higher h2h points ranks first (negative = a ranks above b)
+  }
+
+  return teams.slice().sort(function(a,b){
+    return (pts[b]-pts[a]) || h2hCompare(a,b) || (gd[b]-gd[a]) || (gs[b]-gs[a]) || a.localeCompare(b);
+  });
 }
 
 function cdtDateKey(matchId) {
