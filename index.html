@@ -634,7 +634,7 @@ function td(key) { return TEAM_DATA[key] || {flag:"🏳️",rank:null,name:key};
 function slug(s) { return s.toLowerCase().replace(/[^a-z0-9]/g,''); }
 function getLocal(k) { try { return JSON.parse(localStorage.getItem(k)||'{}'); } catch(e) { return {}; } }
 function setLocal(k,v) { localStorage.setItem(k,JSON.stringify(v)); }
-var HARDCODED_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz0YPpEQmEIIawX-sQky-JrLb-jNksSSZ0AbvWq7dkiPMSxzj-VWAocIwUKNXt2QcdF/exec';
+var HARDCODED_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxVZjI7V71O6rURmB2qwJwKHyB_AtH8ZV4gojzxQ0rlFaPxdwpt3DH1O_Ya_-quOTdG/exec';
 function getSheetUrl() { return localStorage.getItem('wc_sheet_url') || HARDCODED_SHEET_URL; }
 
 // ════════ SHEET API ════════
