@@ -599,16 +599,16 @@ var MATCHES = [
   {id:"R32d",round:"Ronda de 32",home:"Netherlands",away:"Morocco",kickoff:"Lun 29 Jun · 19:00 Hora CDMX",city:"Monterrey"},
   {id:"R32e",round:"Ronda de 32",home:"Ivory Coast",away:"Norway",kickoff:"Mar 30 Jun · 11:00 Hora CDMX",city:"Dallas"},
   {id:"R32f",round:"Ronda de 32",home:"France",away:"Sweden",kickoff:"Mar 30 Jun · 15:00 Hora CDMX",city:"New York/NJ"},
-  {id:"R32g",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32h",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32i",round:"Ronda de 32",home:"USA",away:"Bosnia and Herzegovina",kickoff:"Mié 1 Jul · 18:00 Hora CDMX",city:"San Francisco"},
-  {id:"R32j",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32k",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32l",round:"Ronda de 32",home:"Australia",away:"Egypt",kickoff:"Vie 3 Jul · 12:00 Hora CDMX",city:"Dallas"},
-  {id:"R32m",round:"Ronda de 32",home:"Argentina",away:"Cape Verde",kickoff:"Vie 3 Jul · 16:00 Hora CDMX",city:"Miami"},
-  {id:"R32n",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32o",round:"Ronda de 32",home:"TBD",away:"TBD"},
-  {id:"R32p",round:"Ronda de 32",home:"TBD",away:"TBD"},
+  {id:"R32g",round:"Ronda de 32",home:"Mexico",away:"Ecuador",kickoff:"Mar 30 Jun · 19:00 Hora CDMX",city:"Mexico City"},
+  {id:"R32h",round:"Ronda de 32",home:"England",away:"DR Congo",kickoff:"Mié 1 Jul · 10:00 Hora CDMX",city:"Atlanta"},
+  {id:"R32i",round:"Ronda de 32",home:"Belgium",away:"Senegal",kickoff:"Mié 1 Jul · 14:00 Hora CDMX",city:"Seattle"},
+  {id:"R32j",round:"Ronda de 32",home:"USA",away:"Bosnia and Herzegovina",kickoff:"Mié 1 Jul · 18:00 Hora CDMX",city:"San Francisco"},
+  {id:"R32k",round:"Ronda de 32",home:"Spain",away:"Austria",kickoff:"Jue 2 Jul · 13:00 Hora CDMX",city:"Los Angeles"},
+  {id:"R32l",round:"Ronda de 32",home:"Portugal",away:"Croatia",kickoff:"Jue 2 Jul · 17:00 Hora CDMX",city:"Toronto"},
+  {id:"R32m",round:"Ronda de 32",home:"Switzerland",away:"Algeria",kickoff:"Jue 2 Jul · 21:00 Hora CDMX",city:"Vancouver"},
+  {id:"R32n",round:"Ronda de 32",home:"Australia",away:"Egypt",kickoff:"Vie 3 Jul · 12:00 Hora CDMX",city:"Dallas"},
+  {id:"R32o",round:"Ronda de 32",home:"Argentina",away:"Cape Verde",kickoff:"Vie 3 Jul · 16:00 Hora CDMX",city:"Miami"},
+  {id:"R32p",round:"Ronda de 32",home:"Colombia",away:"Ghana",kickoff:"Vie 3 Jul · 19:30 Hora CDMX",city:"Kansas City"},
   {id:"R16a",round:"Octavos de Final",home:"TBD",away:"TBD"},
   {id:"R16b",round:"Octavos de Final",home:"TBD",away:"TBD"},
   {id:"R16c",round:"Octavos de Final",home:"TBD",away:"TBD"},
@@ -949,9 +949,16 @@ var KICKOFF_UTC = {
   "R32d":"2026-06-30T01:00:00Z",
   "R32e":"2026-06-30T17:00:00Z",
   "R32f":"2026-06-30T21:00:00Z",
-  "R32i":"2026-07-02T00:00:00Z",
-  "R32l":"2026-07-03T18:00:00Z",
-  "R32m":"2026-07-03T22:00:00Z"
+  "R32g":"2026-07-01T01:00:00Z",
+  "R32h":"2026-07-01T16:00:00Z",
+  "R32i":"2026-07-01T20:00:00Z",
+  "R32j":"2026-07-02T00:00:00Z",
+  "R32k":"2026-07-02T19:00:00Z",
+  "R32l":"2026-07-02T23:00:00Z",
+  "R32m":"2026-07-03T03:00:00Z",
+  "R32n":"2026-07-03T18:00:00Z",
+  "R32o":"2026-07-03T22:00:00Z",
+  "R32p":"2026-07-04T01:30:00Z"
 };
 
 function isLocked(matchId) {
@@ -1251,8 +1258,10 @@ function renderMatchCards(picks, results) {
   koWarn.innerHTML='<div class="info-box" style="margin-bottom:0;">Algunos partidos ya tienen equipos confirmados — puedes enviar tu pronóstico ya. Los que aún dicen "Por definir" se irán añadiendo a medida que se confirmen los equipos clasificados.</div>';
   koBody.appendChild(koWarn);
 
-  var koRounds = ['Ronda de 32','Octavos de Final','Cuartos de Final','Semifinal','Tercer Lugar','Final'];
-  koRounds.forEach(function(round) {
+  var koRounds = ['Ronda de 32'];
+  var futureRounds = ['Octavos de Final','Cuartos de Final','Semifinal','Tercer Lugar','Final'];
+
+  function renderKoRound(round, container) {
     var roundMatches = koMatches.filter(function(m){ return m.round===round; });
     if(!roundMatches.length) return;
     var bonus = METHOD_BONUS[round];
@@ -1305,10 +1314,41 @@ function renderMatchCards(picks, results) {
             '</select></div>'+
         '</div>';
       grid.appendChild(div);
+
+      // Restore saved pick values for this knockout match
+      var savedKoPick = picks.matches && picks.matches[m.id];
+      if(savedKoPick) {
+        var pwKo = div.querySelector('#pw-'+m.id);
+        var pmKo = div.querySelector('#pm-'+m.id);
+        if(pwKo && savedKoPick.winner) pwKo.value = savedKoPick.winner;
+        if(pmKo && savedKoPick.method) pmKo.value = savedKoPick.method;
+      }
+
       lockFields(div, m.id);
     });
-    koBody.appendChild(card);
+    container.appendChild(card);
+  }
+
+  // Round of 32 — rendered directly in the main flow
+  koRounds.forEach(function(round) { renderKoRound(round, koBody); });
+
+  // Future rounds — Octavos de Final through Final, collapsed dropdown
+  var hasFutureMatches = futureRounds.some(function(round) {
+    return koMatches.filter(function(m){ return m.round===round; }).length > 0;
   });
+  if(hasFutureMatches) {
+    var futureDetails = document.createElement('details');
+    futureDetails.className = 'section-accordion';
+    var futureSummary = document.createElement('summary');
+    futureSummary.className = 'section-summary';
+    futureSummary.innerHTML = '🔮 Próximas Rondas <span class="section-count">(Octavos a la Final)</span>';
+    futureDetails.appendChild(futureSummary);
+    var futureBody = document.createElement('div');
+    futureBody.className = 'section-body';
+    futureDetails.appendChild(futureBody);
+    koBody.appendChild(futureDetails);
+    futureRounds.forEach(function(round) { renderKoRound(round, futureBody); });
+  }
 }
 
 function lockChampionPick(champion) {
