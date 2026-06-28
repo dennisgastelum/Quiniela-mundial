@@ -1832,17 +1832,23 @@ function buildWhatsappMessage(day, results, allPicks, prevScores) {
 
     // Tally picks for this match across all players
     var homeNames = [], drawNames = [], awayNames = [], noPick = [];
+    var methodLabel = {'90':'⏱90′','aet':'➕TE'}; // short label for knockout method
     Object.values(allPicks).forEach(function(p) {
       var pick = p.matches && p.matches[m.id];
       var playerName = p.name || '?';
+      // For knockout matches, append the player's method pick next to their name
+      var nameTag = playerName;
+      if(!m.group && pick && pick.method && methodLabel[pick.method]) {
+        nameTag = playerName+' ('+methodLabel[pick.method]+')';
+      }
       if(!pick || !pick.winner) {
         noPick.push(playerName);
       } else if(pick.winner === m.home) {
-        homeNames.push(playerName);
+        homeNames.push(nameTag);
       } else if(pick.winner === 'Draw') {
-        drawNames.push(playerName);
+        drawNames.push(nameTag);
       } else if(pick.winner === m.away) {
-        awayNames.push(playerName);
+        awayNames.push(nameTag);
       } else {
         noPick.push(playerName);
       }
