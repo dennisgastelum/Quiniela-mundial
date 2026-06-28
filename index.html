@@ -1434,29 +1434,49 @@ function submitPicks() {
       Object.keys(sp.picks).forEach(function(k){ if(k.toLowerCase()===nl) sheetPicks=sp.picks[k]; });
     }
     var existing = sheetPicks || local[name] || {};
+    var hadAnyPriorData = !!(sheetPicks || local[name]);
 
     // Preserve champion
     var originalChampion = existing.champion || '';
     var currentChampion = document.getElementById('champion-pick').value;
     var champion = originalChampion || currentChampion;
 
+    // Safety check: if there's no prior data anywhere (sheet or local) AND there are
+    // locked matches with no value on screen either, warn before proceeding —
+    // this is the exact scenario that could silently erase a player's history.
+    var locked = MATCHES.filter(function(m){ return isLocked(m.id); });
+    var lockedWithNoScreenValue = locked.filter(function(m){
+      var pw = document.getElementById('pw-'+m.id);
+      return !(pw && pw.value);
+    });
+    if(!hadAnyPriorData && lockedWithNoScreenValue.length > 0) {
+      btn.innerHTML='📤 Enviar Pronósticos'; btn.disabled=false;
+      if(!confirm('⚠️ No se pudo verificar tus pronósticos guardados (sin conexión a Google Sheets o sin datos previos) y hay '+lockedWithNoScreenValue.length+' partido(s) ya cerrados sin pronóstico visible en pantalla.\n\nSi continúas, esos partidos podrían enviarse vacíos. ¿Seguro que quieres continuar?')) return;
+    }
+
     var picks = {name:name, champion:champion, matches:{}, submittedAt:existing.submittedAt||new Date().toISOString()};
     MATCHES.forEach(function(m){
-      // For locked matches, always preserve the existing saved pick — never overwrite with empty disabled fields
-      if(isLocked(m.id)) {
-        if(existing.matches && existing.matches[m.id] && existing.matches[m.id].winner) {
-          picks.matches[m.id] = existing.matches[m.id];
-        } else {
-          // Match locked AND no prior saved pick — block any value read from a stale, no-longer-editable screen
-          picks.matches[m.id] = {winner:'',home:'',away:'',method:''};
-        }
-        return;
-      }
       var pw = document.getElementById('pw-'+m.id);
       var ph = document.getElementById('ph-'+m.id);
       var pa = document.getElementById('pa-'+m.id);
       var pm = document.getElementById('pm-'+m.id);
-      picks.matches[m.id]={winner:pw?pw.value:'',home:ph?ph.value:'',away:pa?pa.value:'',method:pm?pm.value:''};
+      var screenPick = {winner:pw?pw.value:'',home:ph?ph.value:'',away:pa?pa.value:'',method:pm?pm.value:''};
+
+      if(isLocked(m.id)) {
+        // For locked matches: prefer the existing saved pick (source of truth from the sheet).
+        // Only fall back to the screen value if there's no existing saved pick at all —
+        // NEVER force it to empty, since that would erase a previously submitted pick.
+        var savedPick = existing.matches && existing.matches[m.id];
+        if(savedPick && savedPick.winner) {
+          picks.matches[m.id] = savedPick;
+        } else if(screenPick.winner) {
+          picks.matches[m.id] = screenPick;
+        } else {
+          picks.matches[m.id] = savedPick || screenPick;
+        }
+        return;
+      }
+      picks.matches[m.id] = screenPick;
     });
 
     // Warn if submitting with very few picks and no prior data loaded
