@@ -1064,7 +1064,11 @@ function renderMatchCards(picks, results) {
 
   // Split group matches into finished (locked) and upcoming (unlocked)
   var allGroupMatches = MATCHES.filter(function(m){ return m.group; });
-  var finishedMatches = allGroupMatches.filter(function(m){ return isLocked(m.id); });
+  // Knockout matches with confirmed teams (no TBD) that are already locked also go into "Cerrados"
+  var closedKoMatches = MATCHES.filter(function(m){
+    return !m.group && m.home !== 'TBD' && m.away !== 'TBD' && isLocked(m.id);
+  });
+  var finishedMatches = allGroupMatches.filter(function(m){ return isLocked(m.id); }).concat(closedKoMatches);
   var upcomingMatches = allGroupMatches.filter(function(m){ return !isLocked(m.id); });
 
   function sortByView(list) {
@@ -1078,9 +1082,67 @@ function renderMatchCards(picks, results) {
 
   function buildMatchDiv(m) {
     var ht = td(m.home), at = td(m.away);
+    var kickoffHtml = m.kickoff ? '<div class="kickoff-badge">🕐 '+m.kickoff+(m.city?' · 📍 '+m.city:'')+'</div>' : '';
+    var div = document.createElement('div');
+
+    if(!m.group) {
+      // Knockout match layout — winner + method, scored with ROUND_PTS/METHOD_BONUS
+      var r = results[m.id], p = picks.matches && picks.matches[m.id];
+      var ptsHtml = '';
+      if(r && r.winner && p && p.winner && isLocked(m.id)) {
+        var pts = ROUND_PTS[m.round] || 8;
+        var bonus = METHOD_BONUS[m.round] || 0;
+        var winnerCorrect = p.winner === r.winner;
+        var matchPts = 0, notes = [];
+        if(winnerCorrect) { matchPts += pts; notes.push('✅ Resultado +'+pts); }
+        else { notes.push('❌ Resultado incorrecto'); }
+        var methodMatches = p.method && r.method && p.method === r.method;
+        var withheldCase = !winnerCorrect && p.method === '90';
+        if(methodMatches && !withheldCase) { matchPts += bonus; notes.push('⏱️ Método +'+bonus); }
+        var cls = matchPts > 0 ? 'scored' : 'missed';
+        ptsHtml = '<div class="match-pts '+cls+'">'+
+          '<span class="pts-total">'+matchPts+'pts</span>'+
+          '<span>'+notes.join(' · ')+'</span>'+
+        '</div>';
+      }
+
+      div.innerHTML =
+        '<div class="match-label">'+m.id+'</div>'+
+        kickoffHtml+
+        '<div class="match-teams">'+
+          '<div class="team-block"><span class="team-flag">'+ht.flag+'</span><span class="team-name">'+ht.name+'</span></div>'+
+          '<div class="vs">VS</div>'+
+          '<div class="team-block right"><span class="team-flag">'+at.flag+'</span><span class="team-name">'+at.name+'</span></div>'+
+        '</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">'+
+          '<div><label>Ganador</label>'+
+            '<select id="pw-'+m.id+'">'+
+              '<option value="">Elige…</option>'+
+              (m.home!=='TBD'?'<option value="'+m.home+'">'+ht.flag+' '+ht.name+'</option>':'')+
+              (m.away!=='TBD'?'<option value="'+m.away+'">'+at.flag+' '+at.name+'</option>':'')+
+            '</select></div>'+
+          '<div><label>Método</label>'+
+            '<select id="pm-'+m.id+'">'+
+              '<option value="">Elige…</option>'+
+              '<option value="90">⏱ 90 minutos</option>'+
+              '<option value="aet">➕ Tiempo Extra / Penaltis</option>'+
+            '</select></div>'+
+        '</div>'+
+        ptsHtml;
+
+      if(p) {
+        var pwKo = div.querySelector('#pw-'+m.id);
+        var pmKo = div.querySelector('#pm-'+m.id);
+        if(pwKo && p.winner) pwKo.value = p.winner;
+        if(pmKo && p.method) pmKo.value = p.method;
+      }
+      lockFields(div, m.id);
+      return div;
+    }
+
+    // Group stage match layout
     var hRank = ht.rank ? '#'+ht.rank+' FIFA' : '';
     var aRank = at.rank ? '#'+at.rank+' FIFA' : '';
-    var kickoffHtml = m.kickoff ? '<div class="kickoff-badge">🕐 '+m.kickoff+(m.city?' · 📍 '+m.city:'')+'</div>' : '';
 
     var ptsHtml = '';
     var r = results[m.id], p = picks.matches && picks.matches[m.id];
@@ -1105,7 +1167,6 @@ function renderMatchCards(picks, results) {
       '</div>';
     }
 
-    var div = document.createElement('div');
     div.innerHTML =
       '<div class="match-label">'+m.id+'</div>'+
       kickoffHtml+
@@ -1254,15 +1315,15 @@ function renderMatchCards(picks, results) {
   koDetails.appendChild(koBody);
   cont.appendChild(koDetails);
 
-  var koWarn = document.createElement('div'); koWarn.className='card';
-  koWarn.innerHTML='<div class="info-box" style="margin-bottom:0;">Algunos partidos ya tienen equipos confirmados — puedes enviar tu pronóstico ya. Los que aún dicen "Por definir" se irán añadiendo a medida que se confirmen los equipos clasificados.</div>';
-  koBody.appendChild(koWarn);
+
 
   var koRounds = ['Ronda de 32'];
   var futureRounds = ['Octavos de Final','Cuartos de Final','Semifinal','Tercer Lugar','Final'];
 
   function renderKoRound(round, container) {
-    var roundMatches = koMatches.filter(function(m){ return m.round===round; });
+    var roundMatches = koMatches.filter(function(m){
+      return m.round===round && closedKoMatches.indexOf(m) === -1;
+    });
     if(!roundMatches.length) return;
     var bonus = METHOD_BONUS[round];
     var card = document.createElement('div'); card.className='card';
@@ -1697,7 +1758,6 @@ function buildWhatsappMessage(day, results, allPicks, prevScores) {
   var resultLines = '';
   var matchCount = 0;
   var totalPlayers = Object.keys(allPicks).length;
-  var maxPtsPerMatch = totalPlayers * 2; // max possible per match (result only)
 
   MATCHES.forEach(function(m) {
     var r = results[m.id];
@@ -1707,22 +1767,34 @@ function buildWhatsappMessage(day, results, allPicks, prevScores) {
     var ht = td(m.home), at = td(m.away);
     var score = (r.home!==''&&r.away!=='') ? r.home+' – '+r.away : '– –';
 
-    // Count points awarded (winner only, not exact bonus) and exact scores separately
+    // Per-match points: 2 for group stage result; ROUND_PTS[round] for knockout winner
+    var ptsPerCorrectPick = m.group ? 2 : (ROUND_PTS[m.round] || 8);
+    var maxPtsPerMatch = totalPlayers * ptsPerCorrectPick;
+
+    // Count points awarded (winner only, not exact/method bonus), exact scores, and method-correct (knockout only)
     var ptsAwarded = 0;
     var exactCount = 0;
+    var methodCount = 0;
     Object.values(allPicks).forEach(function(p) {
       var pick = p.matches && p.matches[m.id];
       if(!pick || !pick.winner) return;
-      if(pick.winner === r.winner) {
-        ptsAwarded += 2;
-        if(String(pick.home||'0')===String(r.home||'0') && String(pick.away||'0')===String(r.away||'0')) {
+      var winnerCorrect = pick.winner === r.winner;
+      if(winnerCorrect) {
+        ptsAwarded += ptsPerCorrectPick;
+        if(m.group && String(pick.home||'0')===String(r.home||'0') && String(pick.away||'0')===String(r.away||'0')) {
           exactCount++;
         }
+      }
+      if(!m.group) {
+        var methodMatches = pick.method && r.method && pick.method === r.method;
+        var withheldCase = !winnerCorrect && pick.method === '90';
+        if(methodMatches && !withheldCase) methodCount++;
       }
     });
 
     var statsStr = ' · '+ptsAwarded+'/'+maxPtsPerMatch+' pts';
     if(exactCount > 0) statsStr += ' 🎯 ×'+exactCount;
+    if(!m.group) statsStr += ' ⏱️ ×'+methodCount;
     resultLines += ht.flag+' '+ht.name+' '+score+' '+at.name+' '+at.flag+statsStr+'\n';
     matchCount++;
   });
@@ -1754,7 +1826,8 @@ function buildWhatsappMessage(day, results, allPicks, prevScores) {
     var todayDetail = s.detail.filter(function(d) {
       return d.matchId && todayMatchIds[d.matchId];
     });
-    return {name: p.name||'?', total: s.total, detail: todayDetail};
+    var todayPts = todayDetail.reduce(function(sum, d){ return sum + d.pts; }, 0);
+    return {name: p.name||'?', total: s.total, detail: todayDetail, todayPts: todayPts};
   }).sort(function(a,b){return b.total - a.total;});
 
   // Build leaderboard lines — top 10 only
@@ -1771,8 +1844,7 @@ function buildWhatsappMessage(day, results, allPicks, prevScores) {
 
   scored.forEach(function(p, i) {
     if(i >= 10) return;
-    var prev = prevScores[p.name] !== undefined ? prevScores[p.name] : 0;
-    var todayPts = p.total - prev;
+    var todayPts = p.todayPts;
     var deltaStr = todayPts > 0 ? ' (+'+todayPts+' hoy)' : ' (+0 hoy)';
     var medal = medals[p.rank-1] || p.rank+'.';
     lbLines += medal+' '+p.name+' — '+p.total+' pts'+deltaStr+'\n';
