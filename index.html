@@ -1793,7 +1793,7 @@ function buildWhatsappMessage(day, results, allPicks, prevScores) {
     });
 
     var statsStr = ' · '+ptsAwarded+'/'+maxPtsPerMatch+' pts';
-    if(exactCount > 0) statsStr += ' 🎯 ×'+exactCount;
+    if(m.group && exactCount > 0) statsStr += ' 🎯 ×'+exactCount;
     if(!m.group) statsStr += ' ⏱️ ×'+methodCount;
     resultLines += ht.flag+' '+ht.name+' '+score+' '+at.name+' '+at.flag+statsStr+'\n';
     matchCount++;
