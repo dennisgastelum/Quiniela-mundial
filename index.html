@@ -609,14 +609,14 @@ var MATCHES = [
   {id:"R32n",round:"Ronda de 32",home:"Australia",away:"Egypt",kickoff:"Vie 3 Jul · 12:00 Hora CDMX",city:"Dallas"},
   {id:"R32o",round:"Ronda de 32",home:"Argentina",away:"Cape Verde",kickoff:"Vie 3 Jul · 16:00 Hora CDMX",city:"Miami"},
   {id:"R32p",round:"Ronda de 32",home:"Colombia",away:"Ghana",kickoff:"Vie 3 Jul · 19:30 Hora CDMX",city:"Kansas City"},
-  {id:"R16a",round:"Octavos de Final",home:"TBD",away:"TBD"},
-  {id:"R16b",round:"Octavos de Final",home:"TBD",away:"TBD"},
-  {id:"R16c",round:"Octavos de Final",home:"TBD",away:"TBD"},
-  {id:"R16d",round:"Octavos de Final",home:"TBD",away:"TBD"},
-  {id:"R16e",round:"Octavos de Final",home:"TBD",away:"TBD"},
-  {id:"R16f",round:"Octavos de Final",home:"TBD",away:"TBD"},
-  {id:"R16g",round:"Octavos de Final",home:"TBD",away:"TBD"},
-  {id:"R16h",round:"Octavos de Final",home:"TBD",away:"TBD"},
+  {id:"R16a",round:"Octavos de Final",home:"Canada",away:"Morocco",kickoff:"Sáb 4 Jul · 11:00 Hora CDMX",city:"Houston"},
+  {id:"R16b",round:"Octavos de Final",home:"Paraguay",away:"France",kickoff:"Sáb 4 Jul · 15:00 Hora CDMX",city:"Philadelphia"},
+  {id:"R16c",round:"Octavos de Final",home:"Brazil",away:"Norway",kickoff:"Dom 5 Jul · 14:00 Hora CDMX",city:"New York/NJ"},
+  {id:"R16d",round:"Octavos de Final",home:"Mexico",away:"England",kickoff:"Dom 5 Jul · 18:00 Hora CDMX",city:"Mexico City"},
+  {id:"R16e",round:"Octavos de Final",home:"Spain",away:"Portugal",kickoff:"Lun 6 Jul · 13:00 Hora CDMX",city:"Dallas"},
+  {id:"R16f",round:"Octavos de Final",home:"USA",away:"Belgium",kickoff:"Lun 6 Jul · 17:00 Hora CDMX",city:"Seattle"},
+  {id:"R16g",round:"Octavos de Final",home:"TBD",away:"TBD",kickoff:"Mar 7 Jul · 10:00 Hora CDMX",city:"Atlanta"},
+  {id:"R16h",round:"Octavos de Final",home:"Switzerland",away:"TBD",kickoff:"Mar 7 Jul · 14:00 Hora CDMX",city:"Vancouver"},
   {id:"QFa",round:"Cuartos de Final",home:"TBD",away:"TBD"},
   {id:"QFb",round:"Cuartos de Final",home:"TBD",away:"TBD"},
   {id:"QFc",round:"Cuartos de Final",home:"TBD",away:"TBD"},
@@ -958,7 +958,15 @@ var KICKOFF_UTC = {
   "R32m":"2026-07-03T03:00:00Z",
   "R32n":"2026-07-03T18:00:00Z",
   "R32o":"2026-07-03T22:00:00Z",
-  "R32p":"2026-07-04T01:30:00Z"
+  "R32p":"2026-07-04T01:30:00Z",
+  "R16a":"2026-07-04T17:00:00Z",
+  "R16b":"2026-07-04T21:00:00Z",
+  "R16c":"2026-07-05T20:00:00Z",
+  "R16d":"2026-07-06T00:00:00Z",
+  "R16e":"2026-07-06T19:00:00Z",
+  "R16f":"2026-07-06T23:00:00Z",
+  "R16g":"2026-07-07T16:00:00Z",
+  "R16h":"2026-07-07T20:00:00Z"
 };
 
 function isLocked(matchId) {
@@ -1008,7 +1016,9 @@ function lockFields(div, matchId) {
     var cdtDate = utc ? new Date(new Date(utc).getTime() - 6 * 60 * 60 * 1000) : null;
     var isJune23or24 = cdtDate && cdtDate.getUTCMonth() === 5 && (cdtDate.getUTCDate() === 23 || cdtDate.getUTCDate() === 24);
 
-    if(!isGroupStage) {
+    if(!isGroupStage && (match.home === 'TBD' || match.away === 'TBD')) {
+      badge.textContent = '🔒 Por Definir';
+    } else if(!isGroupStage) {
       badge.textContent = '🔒 Cerrado — menos de 2h para el inicio';
     } else if(isJune23or24) {
       badge.textContent = '🔒 Cerrado — partido en curso o finalizado';
@@ -1317,8 +1327,8 @@ function renderMatchCards(picks, results) {
 
 
 
-  var koRounds = ['Ronda de 32'];
-  var futureRounds = ['Octavos de Final','Cuartos de Final','Semifinal','Tercer Lugar','Final'];
+  var koRounds = ['Ronda de 32','Octavos de Final'];
+  var futureRounds = ['Cuartos de Final','Semifinal','Tercer Lugar','Final'];
 
   function renderKoRound(round, container) {
     var roundMatches = koMatches.filter(function(m){
@@ -1349,7 +1359,7 @@ function renderMatchCards(picks, results) {
         kickoffHtml = '<div class="kickoff-badge">🕐 '+m.kickoff+(m.city?' · 📍 '+m.city:'')+'</div>'+
           (closeStr ? '<div class="warn-box" style="margin:0 0 10px;padding:8px 12px;font-size:0.76rem;">⚠️ Cierra 2h antes — '+closeStr+'</div>' : '');
       } else if(m.home === 'TBD' || m.away === 'TBD') {
-        kickoffHtml = '<div class="warn-box" style="margin:0 0 10px;padding:8px 12px;font-size:0.76rem;">🔒 Cerrado — equipos aún por confirmar</div>';
+        kickoffHtml = '<div class="warn-box" style="margin:0 0 10px;padding:8px 12px;font-size:0.76rem;">🔒 Por Definir</div>';
       }
 
       div.innerHTML=
@@ -1402,7 +1412,7 @@ function renderMatchCards(picks, results) {
     futureDetails.className = 'section-accordion';
     var futureSummary = document.createElement('summary');
     futureSummary.className = 'section-summary';
-    futureSummary.innerHTML = '🔮 Próximas Rondas <span class="section-count">(Octavos a la Final)</span>';
+    futureSummary.innerHTML = '🔮 Próximas Rondas <span class="section-count">(Cuartos a la Final)</span>';
     futureDetails.appendChild(futureSummary);
     var futureBody = document.createElement('div');
     futureBody.className = 'section-body';
