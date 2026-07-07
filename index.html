@@ -1331,8 +1331,8 @@ function renderMatchCards(picks, results) {
 
 
 
-  var koRounds = ['Ronda de 32','Octavos de Final'];
-  var futureRounds = ['Cuartos de Final','Semifinal','Tercer Lugar','Final'];
+  var koRounds = ['Ronda de 32','Octavos de Final','Cuartos de Final'];
+  var futureRounds = ['Semifinal','Tercer Lugar','Final'];
 
   function renderKoRound(round, container) {
     var roundMatches = koMatches.filter(function(m){
@@ -1416,7 +1416,7 @@ function renderMatchCards(picks, results) {
     futureDetails.className = 'section-accordion';
     var futureSummary = document.createElement('summary');
     futureSummary.className = 'section-summary';
-    futureSummary.innerHTML = '🔮 Próximas Rondas <span class="section-count">(Cuartos a la Final)</span>';
+    futureSummary.innerHTML = '🔮 Próximas Rondas <span class="section-count">(Semifinal a la Final)</span>';
     futureDetails.appendChild(futureSummary);
     var futureBody = document.createElement('div');
     futureBody.className = 'section-body';
