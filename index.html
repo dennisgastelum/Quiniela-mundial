@@ -1814,11 +1814,7 @@ function buildWhatsappMessage(day, results, allPicks, prevScores) {
   });
 
   if(matchCount === 0) {
-    var errEl = document.getElementById('wa-error');
-    errEl.style.display='block';
-    errEl.textContent='❌ No hay resultados de hoy. Introduce los resultados del día primero.';
-    setTimeout(function(){errEl.style.display='none';},4000);
-    return;
+    resultLines = '📅 Día de descanso — no hubo partidos hoy.\n';
   }
 
   // Load previous snapshot to compute daily delta
@@ -1859,17 +1855,21 @@ function buildWhatsappMessage(day, results, allPicks, prevScores) {
   scored.forEach(function(p, i) {
     if(i >= 10) return;
     var todayPts = p.todayPts;
-    var deltaStr = todayPts > 0 ? ' (+'+todayPts+' hoy)' : ' (+0 hoy)';
     var medal = medals[p.rank-1] || p.rank+'.';
-    lbLines += medal+' '+p.name+' — '+p.total+' pts'+deltaStr+'\n';
-
-    if(p.detail && p.detail.length > 0) {
-      var detailStr = p.detail.map(function(d){ return d.note; }).join(' · ');
-      lbLines += '   '+detailStr+'\n';
+    if(matchCount === 0) {
+      // Rest day — just show rank and total, no delta or detail
+      lbLines += medal+' '+p.name+' — '+p.total+' pts\n';
     } else {
-      lbLines += '   ❌ Sin puntos hoy\n';
+      var deltaStr = todayPts > 0 ? ' (+'+todayPts+' hoy)' : ' (+0 hoy)';
+      lbLines += medal+' '+p.name+' — '+p.total+' pts'+deltaStr+'\n';
+      if(p.detail && p.detail.length > 0) {
+        var detailStr = p.detail.map(function(d){ return d.note; }).join(' · ');
+        lbLines += '   '+detailStr+'\n';
+      } else {
+        lbLines += '   ❌ Sin puntos hoy\n';
+      }
+      lbLines += '\n';
     }
-    lbLines += '\n';
   });
   if(totalPlayers > 10) {
     lbLines += '··· '+totalPlayers+' participantes en total · Clasificación completa en la app\n';
