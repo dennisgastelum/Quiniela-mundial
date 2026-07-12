@@ -620,9 +620,9 @@ var MATCHES = [
   {id:"QFa",round:"Cuartos de Final",home:"Morocco",away:"France",kickoff:"Jue 9 Jul · 14:00 Hora CDMX",city:"Boston"},
   {id:"QFb",round:"Cuartos de Final",home:"Belgium",away:"Spain",kickoff:"Vie 10 Jul · 13:00 Hora CDMX",city:"Los Angeles"},
   {id:"QFc",round:"Cuartos de Final",home:"Norway",away:"England",kickoff:"Sáb 11 Jul · 15:00 Hora CDMX",city:"Miami"},
-  {id:"QFd",round:"Cuartos de Final",home:"Argentina",away:"Switzerland",kickoff:"Dom 12 Jul · 18:00 Hora CDMX",city:"Kansas City"},
-  {id:"SF1",round:"Semifinal",home:"TBD",away:"TBD"},
-  {id:"SF2",round:"Semifinal",home:"TBD",away:"TBD"},
+  {id:"QFd",round:"Cuartos de Final",home:"Argentina",away:"Switzerland",kickoff:"Vie 11 Jul · 18:00 Hora CDMX",city:"Kansas City"},
+  {id:"SF1",round:"Semifinal",home:"France",away:"Spain",kickoff:"Mar 14 Jul · 13:00 Hora CDMX",city:"Dallas"},
+  {id:"SF2",round:"Semifinal",home:"England",away:"Argentina",kickoff:"Mié 15 Jul · 13:00 Hora CDMX",city:"Atlanta"},
   {id:"TP",round:"Tercer Lugar",home:"TBD",away:"TBD"},
   {id:"FIN",round:"Final",home:"TBD",away:"TBD"}
 ];
@@ -970,7 +970,9 @@ var KICKOFF_UTC = {
   "QFa":"2026-07-09T20:00:00Z",
   "QFb":"2026-07-10T19:00:00Z",
   "QFc":"2026-07-11T21:00:00Z",
-  "QFd":"2026-07-13T00:00:00Z"
+  "QFd":"2026-07-12T00:00:00Z",
+  "SF1":"2026-07-14T19:00:00Z",
+  "SF2":"2026-07-15T19:00:00Z"
 };
 
 function isLocked(matchId) {
@@ -1331,8 +1333,8 @@ function renderMatchCards(picks, results) {
 
 
 
-  var koRounds = ['Ronda de 32','Octavos de Final','Cuartos de Final'];
-  var futureRounds = ['Semifinal','Tercer Lugar','Final'];
+  var koRounds = ['Ronda de 32','Octavos de Final','Cuartos de Final','Semifinal'];
+  var futureRounds = ['Tercer Lugar','Final'];
 
   function renderKoRound(round, container) {
     var roundMatches = koMatches.filter(function(m){
@@ -1416,7 +1418,7 @@ function renderMatchCards(picks, results) {
     futureDetails.className = 'section-accordion';
     var futureSummary = document.createElement('summary');
     futureSummary.className = 'section-summary';
-    futureSummary.innerHTML = '🔮 Próximas Rondas <span class="section-count">(Semifinal a la Final)</span>';
+    futureSummary.innerHTML = '🔮 Próximas Rondas <span class="section-count">(Tercer Lugar y Final)</span>';
     futureDetails.appendChild(futureSummary);
     var futureBody = document.createElement('div');
     futureBody.className = 'section-body';
