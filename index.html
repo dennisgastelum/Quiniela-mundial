@@ -623,8 +623,8 @@ var MATCHES = [
   {id:"QFd",round:"Cuartos de Final",home:"Argentina",away:"Switzerland",kickoff:"Vie 11 Jul · 18:00 Hora CDMX",city:"Kansas City"},
   {id:"SF1",round:"Semifinal",home:"France",away:"Spain",kickoff:"Mar 14 Jul · 13:00 Hora CDMX",city:"Dallas"},
   {id:"SF2",round:"Semifinal",home:"England",away:"Argentina",kickoff:"Mié 15 Jul · 13:00 Hora CDMX",city:"Atlanta"},
-  {id:"TP",round:"Tercer Lugar",home:"TBD",away:"TBD"},
-  {id:"FIN",round:"Final",home:"TBD",away:"TBD"}
+  {id:"TP",round:"Tercer Lugar",home:"France",away:"England",kickoff:"Sáb 18 Jul · 15:00 Hora CDMX",city:"Miami"},
+  {id:"FIN",round:"Final",home:"Spain",away:"Argentina",kickoff:"Dom 19 Jul · 13:00 Hora CDMX",city:"New York/NJ"}
 ];
 var ROUND_PTS = {"Ronda de 32":8,"Octavos de Final":10,"Cuartos de Final":12,"Semifinal":18,"Tercer Lugar":20,"Final":25};
 var METHOD_BONUS = {"Ronda de 32":4,"Octavos de Final":5,"Cuartos de Final":6,"Semifinal":9,"Tercer Lugar":10,"Final":12};
@@ -972,7 +972,9 @@ var KICKOFF_UTC = {
   "QFc":"2026-07-11T21:00:00Z",
   "QFd":"2026-07-12T00:00:00Z",
   "SF1":"2026-07-14T19:00:00Z",
-  "SF2":"2026-07-15T19:00:00Z"
+  "SF2":"2026-07-15T19:00:00Z",
+  "TP":"2026-07-18T21:00:00Z",
+  "FIN":"2026-07-19T19:00:00Z"
 };
 
 function isLocked(matchId) {
@@ -1333,8 +1335,8 @@ function renderMatchCards(picks, results) {
 
 
 
-  var koRounds = ['Ronda de 32','Octavos de Final','Cuartos de Final','Semifinal'];
-  var futureRounds = ['Tercer Lugar','Final'];
+  var koRounds = ['Ronda de 32','Octavos de Final','Cuartos de Final','Semifinal','Tercer Lugar','Final'];
+  var futureRounds = [];
 
   function renderKoRound(round, container) {
     var roundMatches = koMatches.filter(function(m){
