@@ -1728,6 +1728,9 @@ function saveResults() {
     var awayVal = (ra && ra.value !== '') ? ra.value : (rw && rw.value ? '0' : '');
     results[m.id]={home:homeVal, away:awayVal, winner:rw?rw.value:'', method:rm?rm.value:''};
   });
+  // Bundle champion into results so all devices can score consistently
+  var champ = localStorage.getItem('wc_champion');
+  if(champ) results['__champion'] = champ;
   setLocal('wc_results_local',results);
   var btn=document.getElementById('results-btn');
   btn.innerHTML='<span class="spinner"></span>Guardando…'; btn.disabled=true;
@@ -2121,7 +2124,7 @@ function calcScore(picks, results) {
     var withheldCase = !winnerCorrect && p.method === '90';
     if(methodMatches && !withheldCase){total+=bonus;detail.push({pts:bonus,note:'⏱️ '+flags+' método (+'+bonus+')',day:day,matchId:m.id});}
   });
-  var champ = (window._actualChampion !== undefined) ? window._actualChampion : localStorage.getItem('wc_champion');
+  var champ = results['__champion'] || (window._actualChampion !== undefined ? window._actualChampion : localStorage.getItem('wc_champion'));
   if(champ&&picks.champion===champ){total+=30;detail.push({pts:30,note:'👑 Campeón',day:'Campeón',matchId:null});}
   return {total:total,detail:detail,winnersCorrect:winnersCorrect};
 }
@@ -2140,8 +2143,9 @@ function loadAndRenderLeaderboard() {
     var sp = vals[0], sr = vals[1], sc = vals[2];
     if(sp && sp.picks) allPicks = sp.picks;
     if(sr && sr.results) results = sr.results;
-    // Set champion from sheet so scoring is consistent across devices
-    window._actualChampion = (sc && sc.champion) ? sc.champion : localStorage.getItem('wc_champion');
+    // Set champion from sheet — prefer results bundle, fall back to getChampion, then localStorage
+    var champFromResults = results['__champion'];
+    window._actualChampion = champFromResults || (sc && sc.champion) || localStorage.getItem('wc_champion');
     if(window._actualChampion) localStorage.setItem('wc_champion', window._actualChampion);
     loading.style.display = 'none';
 
